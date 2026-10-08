@@ -1,0 +1,60 @@
+{
+  "type": "object",
+  "required": [
+    "lead_id",
+    "business",
+    "country",
+    "channel",
+    "recipient",
+    "subject",
+    "draft_body",
+    "evidence_summary",
+    "commercial_quality",
+    "research_confidence",
+    "compliance_status",
+    "draft_status",
+    "review_status",
+    "scheduled_local_time",
+    "timezone",
+    "sent_at",
+    "followup_due_at",
+    "followup_count",
+    "reply_status"
+  ],
+  "properties": {
+    "channel": {
+      "enum": [
+        "EMAIL",
+        "INSTAGRAM",
+        "FACEBOOK",
+        "WHATSAPP",
+        "VIBER",
+        "LINKEDIN",
+        "OTHER_MANUAL",
+        "NO_ROUTE"
+      ]
+    },
+    "routing": {
+      "enum": [
+        "READY_FOR_DRAFT",
+        "NEEDS_MANUAL_RESEARCH",
+        "PARK",
+        "BLOCKED",
+        "DO_NOT_CONTACT"
+      ]
+    },
+    "draft_status": {
+      "enum": [
+        "DRAFT_READY",
+        "APPROVED",
+        "ZOHO_DRAFT_CREATED",
+        "REJECTED",
+        "NEEDS_RESEARCH",
+        "SENT",
+        "REPLIED",
+        "DO_NOT_CONTACT"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

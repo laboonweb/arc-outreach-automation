@@ -1,0 +1,6 @@
+business_name,industry,country,city,state,website_url,website_ownership_verified,instagram_url,existing_email,source_record_id,approved,outreach_status
+TEST Harbour Skin,Aesthetic clinic,Australia,Sydney,NSW,https://clinic.example.org/,YES,,,fixture-1,YES,SENT
+TEST Metro Renovation,Bathroom renovations,Australia,Melbourne,VIC,https://trades.example.org/,YES,,,fixture-2,,
+TEST Manila Cafe,Cafe,Philippines,Manila,,https://cafe.example.org/,YES,,,fixture-3,,
+TEST Cebu Social,Restaurant,Philippines,Cebu,,,,https://www.instagram.com/example/,unverified@example.org,fixture-4,,
+TEST Perth Studio,Professional services,Australia,Perth,WA,https://old.example.org/,,,,fixture-5,,

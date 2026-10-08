@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Future evidence-bound pain analysis interface",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lead_id", "status", "asset", "pain_point", "business_consequence", "buying_trigger", "evidence_refs", "requires_review"],
+  "properties": {
+    "lead_id": { "type": "string" },
+    "status": { "enum": ["SUPPORTED", "INSUFFICIENT_EVIDENCE", "CONFLICTING_EVIDENCE"] },
+    "asset": { "type": "string" },
+    "pain_point": { "type": "string" },
+    "business_consequence": { "type": "string" },
+    "buying_trigger": { "type": "string" },
+    "evidence_refs": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "uniqueItems": true },
+    "requires_review": { "const": true }
+  }
+}

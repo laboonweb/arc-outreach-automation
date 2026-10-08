@@ -1,0 +1,509 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Normalized Arc lead input",
+  "type": "object",
+  "required": [
+    "business_name",
+    "country"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "city"
+      ]
+    },
+    {
+      "required": [
+        "source_record_id"
+      ]
+    }
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "lead_id": {
+      "type": "string"
+    },
+    "source_record_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "business_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "industry": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "minLength": 1
+    },
+    "city": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "type": "string"
+    },
+    "maps_url": {
+      "type": "string"
+    },
+    "website_url": {
+      "type": "string"
+    },
+    "facebook_url": {
+      "type": "string"
+    },
+    "instagram_url": {
+      "type": "string"
+    },
+    "linkedin_url": {
+      "type": "string"
+    },
+    "existing_email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "website_ownership_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "timezone_override": {
+      "type": "string"
+    },
+    "input_notes": {
+      "type": "string"
+    },
+    "approved": {
+      "type": "string"
+    },
+    "outreach_status": {
+      "type": "string"
+    },
+    "suppressed": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "last_contacted_at": {
+      "type": "string"
+    },
+    "next_followup_at": {
+      "type": "string"
+    },
+    "campaign_id": {
+      "type": "string"
+    },
+    "recipient": {
+      "type": "string"
+    },
+    "message_hash": {
+      "type": "string"
+    },
+    "message_id": {
+      "type": "string"
+    },
+    "sent_at": {
+      "type": "string"
+    },
+    "activity_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "activity_source_url": {
+      "type": "string"
+    },
+    "activity_date": {
+      "type": "string"
+    },
+    "activity_evidence": {
+      "type": "string"
+    },
+    "gap_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "gap_source_url": {
+      "type": "string"
+    },
+    "gap_date": {
+      "type": "string"
+    },
+    "gap_evidence": {
+      "type": "string"
+    },
+    "buying_trigger_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "buying_trigger_source_url": {
+      "type": "string"
+    },
+    "buying_trigger_date": {
+      "type": "string"
+    },
+    "buying_trigger_evidence": {
+      "type": "string"
+    },
+    "proof_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "proof_source_url": {
+      "type": "string"
+    },
+    "proof_date": {
+      "type": "string"
+    },
+    "proof_evidence": {
+      "type": "string"
+    },
+    "contact_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "contact_source_url": {
+      "type": "string"
+    },
+    "contact_date": {
+      "type": "string"
+    },
+    "contact_evidence": {
+      "type": "string"
+    },
+    "decision_maker_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "decision_maker_source_url": {
+      "type": "string"
+    },
+    "decision_maker_date": {
+      "type": "string"
+    },
+    "decision_maker_evidence": {
+      "type": "string"
+    },
+    "instagram_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "instagram_source_url": {
+      "type": "string"
+    },
+    "instagram_date": {
+      "type": "string"
+    },
+    "instagram_evidence": {
+      "type": "string"
+    },
+    "facebook_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "facebook_source_url": {
+      "type": "string"
+    },
+    "facebook_date": {
+      "type": "string"
+    },
+    "facebook_evidence": {
+      "type": "string"
+    },
+    "linkedin_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "linkedin_source_url": {
+      "type": "string"
+    },
+    "linkedin_date": {
+      "type": "string"
+    },
+    "linkedin_evidence": {
+      "type": "string"
+    },
+    "consent_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "consent_source_url": {
+      "type": "string"
+    },
+    "consent_date": {
+      "type": "string"
+    },
+    "consent_evidence": {
+      "type": "string"
+    },
+    "activity_status": {
+      "type": "string"
+    },
+    "gap_unresolved_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_source_type": {
+      "type": "string"
+    },
+    "decision_maker_name_reviewed": {
+      "type": "string"
+    },
+    "decision_maker_role_reviewed": {
+      "type": "string"
+    },
+    "instagram_status_reviewed": {
+      "type": "string"
+    },
+    "facebook_status_reviewed": {
+      "type": "string"
+    },
+    "linkedin_status_reviewed": {
+      "type": "string"
+    },
+    "consent_recipient": {
+      "type": "string"
+    },
+    "role_relevance_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "no_solicitation_checked": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "manual_status_override": {
+      "type": "string"
+    },
+    "manual_reset_at": {
+      "type": "string"
+    },
+    "manual_reset_reason": {
+      "type": "string"
+    },
+    "website_association_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "website_quality_reviewed": {
+      "type": "string"
+    },
+    "business_case_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "whatsapp_status_reviewed": {
+      "type": "string"
+    },
+    "viber_status_reviewed": {
+      "type": "string"
+    },
+    "reviewed_website_url": {
+      "type": "string"
+    },
+    "reviewed_facebook_url": {
+      "type": "string"
+    },
+    "reviewed_instagram_url": {
+      "type": "string"
+    },
+    "reviewed_whatsapp_url": {
+      "type": "string"
+    },
+    "reviewed_viber_url": {
+      "type": "string"
+    },
+    "no_website_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "legitimacy_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "strong_site_solves_gap_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "activity_signal_type": {
+      "type": "string"
+    },
+    "activity_corroborated": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "activity_valid_until": {
+      "type": "string"
+    },
+    "activity_operating_since": {
+      "type": "string"
+    },
+    "identity_status_reviewed": {
+      "type": "string"
+    },
+    "whatsapp_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "whatsapp_source_url": {
+      "type": "string"
+    },
+    "whatsapp_date": {
+      "type": "string"
+    },
+    "whatsapp_evidence": {
+      "type": "string"
+    },
+    "viber_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "viber_source_url": {
+      "type": "string"
+    },
+    "viber_date": {
+      "type": "string"
+    },
+    "viber_evidence": {
+      "type": "string"
+    },
+    "association_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "association_source_url": {
+      "type": "string"
+    },
+    "association_date": {
+      "type": "string"
+    },
+    "association_evidence": {
+      "type": "string"
+    },
+    "website_quality_verified": {
+      "type": [
+        "string",
+        "boolean",
+        "number"
+      ]
+    },
+    "website_quality_source_url": {
+      "type": "string"
+    },
+    "website_quality_date": {
+      "type": "string"
+    },
+    "website_quality_evidence": {
+      "type": "string"
+    },
+    "legitimacy_source_url": {
+      "type": "string"
+    },
+    "legitimacy_date": {
+      "type": "string"
+    },
+    "legitimacy_evidence": {
+      "type": "string"
+    },
+    "business_case_source_url": {
+      "type": "string"
+    },
+    "business_case_date": {
+      "type": "string"
+    },
+    "business_case_evidence": {
+      "type": "string"
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "source_spreadsheet_id": {
+      "type": "string"
+    },
+    "source_sheet": {
+      "type": "string"
+    },
+    "source_row": {
+      "type": "string"
+    },
+    "source_original_id": {
+      "type": "string"
+    }
+  }
+}

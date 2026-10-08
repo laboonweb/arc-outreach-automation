@@ -1,0 +1,19 @@
+{
+  "now": "2026-10-03T03:00:00.000Z",
+  "config": { "allowed_hosts": ["clinic.example.org", "trades.example.org", "old.example.org", "studio.example.org", "cafe.example.org"] },
+  "leads": [
+    { "business_name": "TEST Harbour Skin", "industry": "Aesthetic clinic", "country": "Australia", "city": "Sydney", "state": "NSW", "website_url": "https://clinic.example.org/", "website_ownership_verified": "YES", "source_record_id": "fixture-1", "approved": "YES", "outreach_status": "SENT", "message_id": "synthetic-already-sent" },
+    { "business_name": "TEST Metro Renovation", "industry": "Bathroom renovations", "country": "Australia", "city": "Melbourne", "state": "VIC", "website_url": "https://trades.example.org/", "website_ownership_verified": "YES", "source_record_id": "fixture-2" },
+    { "business_name": "TEST Manila Cafe", "industry": "Cafe", "country": "Philippines", "city": "Manila", "website_url": "https://cafe.example.org/", "website_ownership_verified": "YES", "source_record_id": "fixture-3" },
+    { "business_name": "TEST Cebu Social", "industry": "Restaurant", "country": "Philippines", "city": "Cebu", "instagram_url": "https://www.instagram.com/example/", "existing_email": "unverified@example.org", "source_record_id": "fixture-4" },
+    { "business_name": "TEST Perth Studio", "industry": "Professional services", "country": "Australia", "city": "Perth", "state": "WA", "website_url": "https://old.example.org/", "source_record_id": "fixture-5" }
+  ],
+  "responses": {
+    "https://clinic.example.org/": { "statusCode": 200, "headers": { "content-type": "text/html" }, "body": "<html><title>TEST Harbour Skin</title><h1>Skin consultation appointments</h1><p>This is a synthetic clinic website fixture describing services and consultation options. Real activity must be verified separately.</p><a href='/contact'>Contact our team</a></html>" },
+    "https://clinic.example.org/contact": { "statusCode": 200, "headers": { "content-type": "text/html" }, "body": "<h1>Contact TEST Harbour Skin</h1><p>For consultation enquiries please contact the clinic team. This is a synthetic fixture, not a real clinic or contact address.</p><a href='mailto:hello@clinic.example.org'>Email reception</a>" },
+    "https://trades.example.org/": { "statusCode": 200, "headers": { "content-type": "text/html" }, "body": "<title>Connect your domain</title><h1>This domain isn't connected to a site</h1><p>Wix</p>" },
+    "https://cafe.example.org/": { "statusCode": 404, "headers": { "content-type": "text/html" }, "body": "<h1>Page not found</h1>" },
+    "https://old.example.org/": { "statusCode": 301, "headers": { "location": "https://studio.example.org/" }, "body": "" },
+    "https://studio.example.org/": { "statusCode": 200, "headers": { "content-type": "text/html" }, "body": "<title>TEST Perth Studio</title><h1>Professional consulting services</h1><p>This synthetic practice website describes its professional services and consultation approach. A working redirect is not a broken site.</p>" }
+  }
+}

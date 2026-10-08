@@ -1,0 +1,14 @@
+{
+  "name": "arc-outreach-automation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-first n8n research and manual outreach review pipeline",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build": "node scripts/build-workflows.js",
+    "demo": "node scripts/demo.js",
+    "validate:mvp": "node scripts/validate-outreach-mvp.js",
+    "review": "node scripts/review-server.js"
+  }
+}

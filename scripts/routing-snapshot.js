@@ -1,0 +1,8 @@
+'use strict';
+const intake=require('./dataset-intake');
+// Routing needs verified facts and controls, not copies of entire legacy rows.
+// Full source grids are still hashed before this projection.
+const FIELDS=[...new Set(('lead_id dataset_id business_name country city state location address industry sector category phone maps_url website_url facebook_url instagram_url linkedin_url whatsapp_url viber_url booking_url booking_status source_url source_sheet source_row source_original_id first_contact_at first_contact_channel followup_due_at followup_channel followup_count sent_at last_reply_at reply_status initial_contact_recorded initial_outreach_blocked legacy_join_review_required arc_status legacy_status duplicate_review_required duplicate_matches_json duplicate_group_key manual_duplicate_review_required suppressed suppression_status preferred_channel public_email email_source_url email_source_type email_confidence role_relevance facebook_status instagram_status linkedin_status whatsapp_status viber_status activity_evidence evidence_json critical_uncertainties_json research_required pain_verified pain_point commercial_quality research_confidence business_status compliance_status acma_status timezone website_association website_status website_quality contactability outreach_readiness existing_email legacy_colour legacy_colour_review_required legacy_recheck_required status_signals'.split(' ')).concat(intake.REVIEW_FIELDS))];
+function projectRecord(row){return Object.fromEntries(FIELDS.filter(k=>Object.hasOwn(row,k)).map(k=>[k,row[k]]));}
+function projectLead(row){return {...projectRecord(row),previous_result:projectRecord(row.previous_result||{})};}
+module.exports={...intake,FIELDS,projectLead};

@@ -1,0 +1,95 @@
+{
+  "version": 2,
+  "dry_run": true,
+  "discovery": {
+    "enabled": false,
+    "provider_approved": false,
+    "allowed_hosts": [],
+    "official_hosts": [],
+    "official_urls": []
+  },
+  "limit_per_dataset": 1,
+  "offset_per_dataset": 0,
+  "research_workflow_id": "REPLACE_WITH_IMPORTED_WORKER_ID",
+  "datasets": [
+    {
+      "dataset_id": "AUSTRALIA",
+      "spreadsheet_id": "synthetic_workbook_0",
+      "spreadsheet_url": "",
+      "primary_sheet": "250 Sharp ICPs",
+      "header_row": 5,
+      "supplemental_sheets": {
+        "Cold Email Drafts": 5,
+        "Compliance Queue": 5
+      },
+      "reference_sheets": [
+        "Summary",
+        "Rejected Examples",
+        "Method & Scoring"
+      ],
+      "country": "Australia",
+      "timezone_rule": "AU_CITY_STATE_WITH_EXCEPTIONS",
+      "status_rule": "AU_BUSINESS_CELL_COLOUR_AND_HISTORY",
+      "colour_status_column": "Business",
+      "colour_map": {
+        "FF0000": "DISQUALIFIED",
+        "00FF00": "SENT",
+        "4EA72E": "SENT",
+        "70AD47": "SENT",
+        "92D050": "SENT",
+        "00B050": "SENT",
+        "FFFF00": "PARKED"
+      },
+      "output_sheet": "Arc Research",
+      "acma_applies": true,
+      "allowed_hosts": []
+    },
+    {
+      "dataset_id": "MANILA_LEGACY",
+      "spreadsheet_id": "synthetic_workbook_1",
+      "spreadsheet_url": "",
+      "primary_sheet": "Sharp ICPs",
+      "header_row": 5,
+      "supplemental_sheets": {
+        "Outreach CRM": 5,
+        "Email Outreach": 7,
+        "Follow Up": 1
+      },
+      "reference_sheets": [
+        "Audit Queue",
+        "Candidate Pool",
+        "Summary",
+        "Read Me"
+      ],
+      "country": "Philippines",
+      "timezone_rule": "Asia/Manila",
+      "status_rule": "CRM_EMAIL_FOLLOWUP_HISTORY",
+      "all_leads_previously_contacted": true,
+      "contact_history_note": "Keep the legacy protection policy; load real history only from private authorized configuration.",
+      "output_sheet": "Arc Research",
+      "acma_applies": false,
+      "allowed_hosts": []
+    },
+    {
+      "dataset_id": "MANILA_AUDIT_QUEUE",
+      "spreadsheet_id": "synthetic_workbook_2",
+      "spreadsheet_url": "",
+      "primary_sheet": "Manual Check Queue",
+      "header_row": 5,
+      "supplemental_sheets": {
+        "Qualified": 5,
+        "Audit Log": 5
+      },
+      "reference_sheets": [
+        "Summary",
+        "Method"
+      ],
+      "country": "Philippines",
+      "timezone_rule": "Asia/Manila",
+      "status_rule": "EXPLICIT_MANUAL_DECISION_ONLY",
+      "output_sheet": "Arc Research",
+      "acma_applies": false,
+      "allowed_hosts": []
+    }
+  ]
+}

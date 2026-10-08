@@ -1,0 +1,549 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Arc V1 research result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "lead_id",
+    "business_name",
+    "industry",
+    "country",
+    "city",
+    "state",
+    "maps_url",
+    "website_url",
+    "facebook_url",
+    "instagram_url",
+    "linkedin_url",
+    "business_status",
+    "business_status_confidence",
+    "website_status",
+    "website_final_url",
+    "website_http_code",
+    "website_redirect_target",
+    "public_email",
+    "email_source_url",
+    "email_source_type",
+    "email_confidence",
+    "email_validation",
+    "decision_maker_name",
+    "decision_maker_role",
+    "decision_maker_source",
+    "phone",
+    "social_status",
+    "facebook_status",
+    "instagram_status",
+    "linkedin_status",
+    "pain_point",
+    "pain_evidence",
+    "pain_verified",
+    "business_consequence",
+    "buying_trigger",
+    "lead_quality",
+    "lead_score",
+    "confidence_score",
+    "recommended_channel",
+    "timezone",
+    "timezone_source",
+    "email_subject",
+    "email_draft",
+    "dm_draft",
+    "research_notes",
+    "research_required",
+    "acma_status",
+    "acma_reason",
+    "evidence_json",
+    "errors_json",
+    "checked_at",
+    "research_version",
+    "dataset_id",
+    "source_spreadsheet_id",
+    "source_sheet",
+    "source_row",
+    "source_original_id",
+    "sector",
+    "location",
+    "address",
+    "rating",
+    "reviews",
+    "source_url",
+    "activity_evidence",
+    "website_evidence",
+    "website_source",
+    "website_check_status",
+    "website_association",
+    "decision_maker_confidence",
+    "buying_trigger_source",
+    "buying_trigger_date",
+    "whatsapp_url",
+    "whatsapp_status",
+    "viber_url",
+    "viber_status",
+    "role_relevance",
+    "suppression_status",
+    "legacy_status",
+    "arc_status",
+    "legacy_colour",
+    "legacy_status_imported",
+    "legacy_snapshot_json",
+    "legacy_recheck_required",
+    "legacy_join_review_required",
+    "legacy_colour_review_required",
+    "first_contact_at",
+    "first_contact_channel",
+    "followup_due_at",
+    "followup_channel",
+    "followup_count",
+    "last_reply_at",
+    "reply_status",
+    "initial_contact_recorded",
+    "initial_outreach_blocked",
+    "duplicate_review_required",
+    "duplicate_matches_json",
+    "duplicate_group_key",
+    "website_candidates_json",
+    "last_researched_at",
+    "research_skipped",
+    "commercial_quality",
+    "commercial_basis",
+    "contactability",
+    "contact_route_type",
+    "research_confidence",
+    "outreach_readiness",
+    "compliance_status",
+    "critical_uncertainties_json",
+    "readiness_reasons_json",
+    "activity_signal_strength",
+    "qualification_version",
+    "qualification_checked_at",
+    "qualification_notes"
+  ],
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "pattern": "^arc_[a-f0-9]{64}$"
+    },
+    "business_name": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "maps_url": {
+      "type": "string"
+    },
+    "website_url": {
+      "type": "string"
+    },
+    "facebook_url": {
+      "type": "string"
+    },
+    "instagram_url": {
+      "type": "string"
+    },
+    "linkedin_url": {
+      "type": "string"
+    },
+    "business_status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "LIKELY_ACTIVE",
+        "UNCERTAIN",
+        "LIKELY_INACTIVE",
+        "INACTIVE"
+      ]
+    },
+    "business_status_confidence": {
+      "type": "number"
+    },
+    "website_status": {
+      "type": "string",
+      "enum": [
+        "LIVE",
+        "NO_WEBSITE",
+        "DNS_ERROR",
+        "SSL_ERROR",
+        "404",
+        "EXPIRED_DOMAIN",
+        "DISCONNECTED_DOMAIN",
+        "REDIRECT",
+        "PARKED",
+        "BROKEN",
+        "STRONG_SITE",
+        "WEAK_SITE",
+        "UNKNOWN",
+        "UNCERTAIN",
+        "LIVE_STRONG_SITE",
+        "LIVE_SITE_WITH_GAP",
+        "BROKEN_SITE",
+        "DEAD_DOMAIN",
+        "SOCIAL_ONLY",
+        "BOOKING_PLATFORM_ONLY",
+        "THIRD_PARTY_ONLY"
+      ]
+    },
+    "website_final_url": {
+      "type": "string"
+    },
+    "website_http_code": {
+      "type": [
+        "number",
+        "string"
+      ]
+    },
+    "website_redirect_target": {
+      "type": "string"
+    },
+    "public_email": {
+      "type": "string"
+    },
+    "email_source_url": {
+      "type": "string"
+    },
+    "email_source_type": {
+      "type": "string"
+    },
+    "email_confidence": {
+      "type": "string"
+    },
+    "email_validation": {
+      "type": "string"
+    },
+    "decision_maker_name": {
+      "type": "string"
+    },
+    "decision_maker_role": {
+      "type": "string"
+    },
+    "decision_maker_source": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "social_status": {
+      "type": "string"
+    },
+    "facebook_status": {
+      "type": "string"
+    },
+    "instagram_status": {
+      "type": "string"
+    },
+    "linkedin_status": {
+      "type": "string"
+    },
+    "pain_point": {
+      "type": "string"
+    },
+    "pain_evidence": {
+      "type": "string"
+    },
+    "pain_verified": {
+      "type": "boolean"
+    },
+    "business_consequence": {
+      "type": "string"
+    },
+    "buying_trigger": {
+      "type": "string"
+    },
+    "lead_quality": {
+      "type": "string",
+      "enum": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "PARK",
+        "DISQUALIFY"
+      ]
+    },
+    "lead_score": {
+      "type": "number"
+    },
+    "confidence_score": {
+      "type": "number"
+    },
+    "recommended_channel": {
+      "type": "string",
+      "enum": [
+        "EMAIL_CANDIDATE",
+        "IG_MANUAL",
+        "FB_MANUAL",
+        "LINKEDIN_MANUAL",
+        "WHATSAPP_MANUAL",
+        "VIBER_MANUAL",
+        "BUSINESS_CONTACT_MANUAL",
+        "PARK"
+      ]
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "timezone_source": {
+      "type": "string"
+    },
+    "email_subject": {
+      "type": "string"
+    },
+    "email_draft": {
+      "type": "string"
+    },
+    "dm_draft": {
+      "type": "string"
+    },
+    "research_notes": {
+      "type": "string"
+    },
+    "research_required": {
+      "type": "boolean"
+    },
+    "acma_status": {
+      "type": "string",
+      "enum": [
+        "SAFE_TO_REVIEW",
+        "QUESTIONABLE",
+        "DO_NOT_EMAIL",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "acma_reason": {
+      "type": "string"
+    },
+    "evidence_json": {
+      "type": "string"
+    },
+    "errors_json": {
+      "type": "string"
+    },
+    "checked_at": {
+      "type": "string"
+    },
+    "research_version": {
+      "type": "string"
+    },
+    "dataset_id": {
+      "type": "string"
+    },
+    "source_spreadsheet_id": {
+      "type": "string"
+    },
+    "source_sheet": {
+      "type": "string"
+    },
+    "source_row": {
+      "type": "string"
+    },
+    "source_original_id": {
+      "type": "string"
+    },
+    "sector": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "string"
+    },
+    "reviews": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "activity_evidence": {
+      "type": "string"
+    },
+    "website_evidence": {
+      "type": "string"
+    },
+    "website_source": {
+      "type": "string"
+    },
+    "website_check_status": {
+      "type": "string"
+    },
+    "website_association": {
+      "type": "string"
+    },
+    "decision_maker_confidence": {
+      "type": "string"
+    },
+    "buying_trigger_source": {
+      "type": "string"
+    },
+    "buying_trigger_date": {
+      "type": "string"
+    },
+    "whatsapp_url": {
+      "type": "string"
+    },
+    "whatsapp_status": {
+      "type": "string"
+    },
+    "viber_url": {
+      "type": "string"
+    },
+    "viber_status": {
+      "type": "string"
+    },
+    "role_relevance": {
+      "type": "string"
+    },
+    "suppression_status": {
+      "type": "string"
+    },
+    "legacy_status": {
+      "type": "string"
+    },
+    "arc_status": {
+      "type": "string"
+    },
+    "legacy_colour": {
+      "type": "string"
+    },
+    "legacy_status_imported": {
+      "type": "boolean"
+    },
+    "legacy_snapshot_json": {
+      "type": "string"
+    },
+    "legacy_recheck_required": {
+      "type": "boolean"
+    },
+    "legacy_join_review_required": {
+      "type": "boolean"
+    },
+    "legacy_colour_review_required": {
+      "type": "boolean"
+    },
+    "first_contact_at": {
+      "type": "string"
+    },
+    "first_contact_channel": {
+      "type": "string"
+    },
+    "followup_due_at": {
+      "type": "string"
+    },
+    "followup_channel": {
+      "type": "string"
+    },
+    "followup_count": {
+      "type": "string"
+    },
+    "last_reply_at": {
+      "type": "string"
+    },
+    "reply_status": {
+      "type": "string"
+    },
+    "initial_contact_recorded": {
+      "type": "boolean"
+    },
+    "initial_outreach_blocked": {
+      "type": "boolean"
+    },
+    "duplicate_review_required": {
+      "type": "boolean"
+    },
+    "duplicate_matches_json": {
+      "type": "string"
+    },
+    "duplicate_group_key": {
+      "type": "string"
+    },
+    "website_candidates_json": {
+      "type": "string"
+    },
+    "last_researched_at": {
+      "type": "string"
+    },
+    "research_skipped": {
+      "type": "boolean"
+    },
+    "commercial_quality": {
+      "type": "string",
+      "enum": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "DISQUALIFY"
+      ]
+    },
+    "commercial_basis": {
+      "type": "string"
+    },
+    "contactability": {
+      "type": "string",
+      "enum": [
+        "STRONG",
+        "USABLE",
+        "WEAK",
+        "NONE"
+      ]
+    },
+    "contact_route_type": {
+      "type": "string"
+    },
+    "research_confidence": {
+      "type": "string",
+      "enum": [
+        "HIGH",
+        "MEDIUM",
+        "LOW"
+      ]
+    },
+    "outreach_readiness": {
+      "type": "string",
+      "enum": [
+        "READY_FOR_REVIEW",
+        "NEEDS_RESEARCH",
+        "NEEDS_COMPLIANCE_REVIEW",
+        "PARK",
+        "BLOCKED"
+      ]
+    },
+    "compliance_status": {
+      "type": "string",
+      "enum": [
+        "SAFE_TO_REVIEW",
+        "QUESTIONABLE",
+        "DO_NOT_EMAIL",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "critical_uncertainties_json": {
+      "type": "string"
+    },
+    "readiness_reasons_json": {
+      "type": "string"
+    },
+    "activity_signal_strength": {
+      "type": "string"
+    },
+    "qualification_version": {
+      "type": "string"
+    },
+    "qualification_checked_at": {
+      "type": "string"
+    },
+    "qualification_notes": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "file": "docs/operator-stage1-report.md",
+    "kind": "literal_authorization",
+    "line_sha256": "13c21514dc15840c511118a4276621fee9178afaf94a35f11b11b6892068140b",
+    "reason": "Natural language describing browser authentication; no authorization header value."
+  },
+  {
+    "file": "scripts/inspect-workbooks.py",
+    "kind": "high_entropy_literal_review",
+    "line_sha256": "0923b5f78600331a64a2066003c499068f90f32f1f34b179c67adec59fa50e0c",
+    "reason": "Local workbook filename, not workbook contents, identifiers or credentials."
+  },
+  {
+    "file": "scripts/inspect-workbooks.py",
+    "kind": "high_entropy_literal_review",
+    "line_sha256": "aba47f037e7aec0d0131c9995a10803a5111dfb55a5a2abef39f18103e828732",
+    "reason": "Local workbook filename, not workbook contents, identifiers or credentials."
+  },
+  {
+    "file": "tests/outreach-content.test.js",
+    "kind": "credential_literal",
+    "line_sha256": "b0c1f76ef7a9294decd70640be6d833b670215a57c5621fda58cd56c5970db61",
+    "reason": "Fixed local-test signing fixture, not production or staging signing material."
+  },
+  {
+    "file": "tests/phase2-panel.test.js",
+    "kind": "credential_url",
+    "line_sha256": "3f7bb7b916eda5bb6ca25ef763ba652540d7c7cb1726e652eb2bd3c024149f8c",
+    "reason": "Intentional user:pass URL on example.org in a negative validation fixture."
+  },
+  {
+    "file": "tests/phase2-panel.test.js",
+    "kind": "credential_literal",
+    "line_sha256": "41f041b3bb7f2f5d7bd005dc77c0e59a31d32a17e70b41ebd0cc78af81901aef",
+    "reason": "Fixed local-test signing fixture, not production or staging signing material."
+  },
+  {
+    "file": "tests/research.test.js",
+    "kind": "credential_url",
+    "line_sha256": "23f02b46669a30eab3aa0f6680fb5e47cac9b6c7789b4aa3047160ecd4dfb909",
+    "reason": "Intentional user:pass URL on example.org in a negative validation fixture."
+  },
+  {
+    "file": "scripts/public-suffix-rules.js",
+    "kind": "public_suffix_short_name_collision",
+    "file_sha256": "ee8e7a4e2ddaf11fd108130e4577656f32c91f48532242804715e3a9c07e51bf",
+    "reason": "Unchanged public suffix list collides with one four-character business name; private secret/email/workbook checks still apply."
+  }
+]
