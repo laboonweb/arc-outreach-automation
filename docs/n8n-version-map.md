@@ -46,8 +46,24 @@ After owner approval, only staging control `ml9StJJLEqWXjgC5` changed:
 | Owner-approved four-node OAuth probe | b5294e38-0a8a-4a33-b448-1684295e469a | Inactive/unpublished | One GET succeeded, hash Code failed; no baseline |
 | Restored nine-node synthetic contracts | bf6490c3-bfac-44b7-9d64-296cd1336385 | Inactive/unpublished | Nodes, connections, settings and groups exact to original |
 
-The corrected 256-column probe exists only locally. Its SDK passes validation;
-no Cloud version represents that correction yet. The development recovery commit
-also records 420 passing local tests and unchanged six-candidate hashes. Resolve
-its SHA from this file's commit. Production versions above were freshly rechecked
-unchanged after the failed probe; this staging version map is not a release.
+The local correction checkpoint is Git
+`f449668d19c63517c7e51a9a917b8a5e2c714a15`: 420 passing local tests, corrected
+four-node SDK validation and unchanged six-candidate hashes. Production versions
+above were freshly rechecked unchanged after the first failed probe.
+
+### Approved corrected recovery and body-limit stop, 9 October
+
+Only the same isolated control changed after the owner's direct approval:
+
+| Purpose | Confirmed staging version | State | Outcome |
+|---|---|---|---|
+| Corrected 256-column Australia BEFORE probe | 88bba364-7a0f-41a2-8e72-186d09ff5b63 | Inactive/unpublished | GET succeeded; validator returned INTEGRITY_NATIVE_BODY_LIMIT; no baseline |
+| Restored nine-node synthetic contracts | b924e389-dd0d-45cc-ba9a-62bb407b63c6 | Inactive/unpublished | Nodes, connections, settings and groups exact to original |
+
+The latest recovery report's Git SHA is this section's commit; resolve it with
+`git log -1 --format=%H -- docs/n8n-version-map.md`. No application logic changed.
+All six production versions/graphs/settings and four complete production tables
+were rechecked unchanged after this stop. Other three staging versions and all
+26 synthetic rows were also unchanged. Cumulative use: 43/84 executions,
+134/500 mutations, 6/14 integrity GETs. No further Cloud request or critical test
+followed. This mapping records staging recovery, not a production release.

@@ -1,12 +1,14 @@
 # Readiness continuation, 9 October 2026
 
 **Release blocked. No production publication or deployment occurred.**
-The application candidate is unchanged. The owner-approved OAuth integrity probe
-temporarily replaced only the existing isolated control workflow. Its first run
-failed in the hash-check node; the original control graph/settings were restored
-and verified exactly, inactive and unpublished. No table/source/provider write
-occurred. The corrected probe is local only, awaiting approval to resume after
-the stop. This report includes both the original checkpoint and its continuation.
+The application candidate is unchanged. The owner approved the corrected
+256-column OAuth integrity recovery. Its first native GET succeeded, but the
+validator returned `INTEGRITY_NATIVE_BODY_LIMIT`: the serialized decoded workbook
+response exceeded the approved 8 MiB limit. No usable BEFORE receipt was produced.
+Cloud testing stopped without retry. The original isolated control graph/settings
+were restored and verified exactly, inactive and unpublished. Fresh preservation
+checks passed. No table/source/provider write occurred. Stage 1 remains incomplete.
+This report preserves the earlier checkpoints and the latest stopped recovery.
 
 ## Current results
 
@@ -22,8 +24,9 @@ the stop. This report includes both the original checkpoint and its continuation
 | Local validation | Latest full suite: 420 passed, zero failed/skipped. Earlier checkpoint: 417 passed. Local loopback fixture access was explicitly allowed; no external test call occurred. |
 | Candidate rebuild | All six rebuilt candidate JSON hashes are unchanged. Application logic and existing research/compliance/protection/copy gates were not edited. |
 | First OAuth source probe | Owner authorized and ran it once. Screenshot proves Basic Auth trigger and Google GET success, followed by hash Code failure. Retention was disabled; the exact exception became unavailable after the owner closed the editor. No usable baseline. Count the failed execution and GET. |
-| Local correction | Confirmed defect: the output schema has 208 columns, exceeding the original 100-column range/ceiling. Corrected local probe uses A1:IV5000 (256 columns), retains the 8 MiB body gate and rejects incomplete coverage. Adds redacted failure JSON and HTTP 422 rather than losing a Code exception. Actual Cloud cause remains unconfirmed. Corrected SDK validates with four nodes and no warnings; not installed or rerun. |
-| Recovery | PASS: the control's original nine nodes, connections, settings and groups were restored exactly. New version bf6490c3-bfac-44b7-9d64-296cd1336385 is inactive/unpublished. No execution remains running. All six production graphs/settings/versions and four complete production tables rechecked exact after the failure. |
+| Local correction | Confirmed defect: the output schema has 208 columns, exceeding the original 100-column range/ceiling. Corrected probe uses A1:IV5000 (256 columns), retains the 8 MiB body gate and rejects incomplete coverage. Adds redacted failure JSON and HTTP 422. The earlier Cloud exception remains unconfirmed. Corrected SDK validates with four nodes and no warnings. |
+| Approved corrected Cloud recovery | FAIL: the first Australia BEFORE GET succeeded; the compact Code output was `ok:false,error:INTEGRITY_NATIVE_BODY_LIMIT`. This establishes an excessive serialized decoded response, not its exact byte count. Native nodes were green, but no integrity receipt passed. No remaining BEFORE, synthetic, or AFTER execution followed. The later one-use test URL 404 did not invoke Google. |
+| Restoration after latest stop | PASS: the control's original nine nodes, connections, settings and groups were restored exactly. New version b924e389-dd0d-45cc-ba9a-62bb407b63c6 is inactive/unpublished. No execution remains running. All six production graphs/settings/versions, four complete production tables, the other three staging versions and all 26 synthetic rows rechecked exact after the failure. |
 
 The current [n8n Data Table documentation](https://docs.n8n.io/build/work-with-data/data-tables.md)
 supports the storage default. The [trial documentation](https://docs.n8n.io/deploy/use-n8n-cloud/start-your-free-trial)
@@ -36,30 +39,31 @@ not these general pages, established the current account plan and remaining allo
 |---|---:|---:|
 | Isolated inactive/unpublished workflows | 4 | 4 |
 | Synthetic tables / lead identities | 4 / 8 | 4 / 8 |
-| Cloud executions including children/failures | 42 | 84 |
+| Cloud executions including children/failures | 43 | 84 |
 | Synthetic matched/attempted row mutations | 134 | 500 |
-| Google integrity GETs | 5 | 14, explicitly approved by owner |
+| Google integrity GETs | 6 | 14, explicitly approved by owner |
 | Serialized synthetic application data | 193,437 UTF-8 bytes, unchanged | 5 MiB |
 | Production workflow/table changes, source/Research writes | 0 | 0 |
 | Provider calls, real drafts, sends, paid calls | 0 | 0 until separately gated authorization |
 
-This continuation used two external Google GETs and one native OAuth GET in a
-failed manual execution. The failed run is counted despite disabled retention
-and the absence of a retrievable execution ID. The later one-use listener 404
-did not reach Google. Two isolated control configuration updates installed the
-probe and restored the original graph; no additional row mutation occurred.
+Across the 9 October continuations, two external Google GETs and two native OAuth
+GETs were used. Both unsuccessful integrity runs are counted despite disabled
+retention and the absence of retrievable execution IDs. Later one-use listener
+404s did not reach Google. Four isolated control configuration updates installed
+and restored the original and corrected probes; no additional row mutation occurred.
 Connector preservation reads and SDK validation are not Cloud executions.
 All private snapshots, prior failed attempts and recovery evidence remain.
 
-## OAuth replacement and corrected recovery requiring approval
+## OAuth replacement and corrected recovery authorization history
 
 The anonymous-export HTTP 400 stop is preserved. The owner subsequently approved
 the native OAuth replacement and after-receipt byte-limit caveat. Its first GET
 succeeded but its hash check failed. No retry followed. Local recovery corrects
 the known coverage defect; it does not establish that this was the only Cloud
-failure. A fresh native baseline is still required. Resume approval must cover
-the wider fixed range and one additional total native attempt caused by the
-failed run, within the unchanged cumulative ceilings.
+failure. The owner explicitly approved the wider fixed range and six fresh checks
+within the unchanged ceilings. The corrected recovery then stopped on the body
+limit. A fresh complete baseline is still required; this approval does not permit
+blind retries, raising the payload cap or certifying partial coverage.
 
 1. Temporarily replace only the existing isolated **control** workflow
    `ml9StJJLEqWXjgC5`; create no workflow/table/lead. Preserve its current graph,
@@ -93,13 +97,14 @@ failed run, within the unchanged cumulative ceilings.
    synthetic tests, then the same three AFTER checks. Compare all hashes exactly.
    Restore the control graph/settings; keep all four staging workflows inactive.
 
-Expected recovery increment: **6 fresh Cloud executions, 6 Google GETs, zero row
-mutations** (three BEFORE, three AFTER). From current totals this reaches
+The approved recovery originally permitted **6 fresh Cloud executions, 6 Google
+GETs, zero row mutations** (three BEFORE, three AFTER). From its starting totals
+of 42 executions and five GETs, the planned complete recovery would have reached
 48/84 executions and 11/14 GETs, leaving 36 executions, 366 mutations and three
-unused GETs, before accounting for outstanding synthetic scenarios. The failed
-native attempt makes seven total native integrity attempts. No cumulative budget
-increase is requested. Unused GETs are not a retry
-allowance. There are control workflow configuration writes for the temporary
+unused GETs, before accounting for outstanding synthetic scenarios. The latest
+recovery stopped after its first request; these planned complete-recovery totals
+were not reached. No cumulative budget increase was requested for that attempt.
+Unused GETs are not a retry allowance. There are control workflow configuration writes for the temporary
 probe/book selection and restoration; no production workflow or table write.
 
 The decoded JSON body limit is 8 MiB and the request timeout 30 seconds; workflow
@@ -107,24 +112,68 @@ timeout is 60 seconds. **Native HTTP Request v4.2 has no verified streaming byte
 cap. The 8 MiB rejection happens after receipt**, unlike the external export
 downloader's streaming cap. Fixed ranges/field mask bound the requested content,
 but cannot guarantee a small response when cells contain large strings.
-The owner approved this after-receipt limitation; it remains in the corrected
-probe. The wider range requires renewed approval. This graph's API field
-mask, empty-grid representation and retention behavior still require actual
-Cloud validation. It stops on any unsupported response instead of certifying a
-partial baseline.
+The owner approved this after-receipt limitation and the corrected wider range.
+The latest native run confirmed that this full-workbook response exceeds the
+limit. The body gate runs before coverage checks, so this failure does not
+validate the returned tab/grid representation. Complete coverage remains a gate;
+no partial baseline is certified.
 
 Google documents [the GET, field mask and range behavior](https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/get).
 Its [usage limits](https://developers.google.com/workspace/sheets/api/limits)
 describe standard API use as carrying no additional cost within quota. Expected
 incremental cost is $0 within the verified n8n trial and standard Sheets quota;
 no quota purchase, upgrade or paid integration is authorized. Stop on a quota
-or billing uncertainty. No additional request-budget extension is needed for
-this six-GET replacement under the approved 14 ceiling.
+or billing uncertainty. That approved six-GET scope fit under the 14 ceiling.
+This does not establish the request count or authorize a different replacement
+after the excessive-payload stop.
 
 Original failed candidate: `private/operator-stage1/integrity-probe-0.json` and
-SDK, preserved. Corrected local recovery candidate:
-`integrity-probe-recovery-0.json` and SDK. Existing credential references are kept
-private. No corrected-probe update or second source execution was performed.
+SDK, preserved. Corrected recovery candidate: `integrity-probe-recovery-0.json`
+and SDK, installed and run once, then removed by exact control restoration.
+Candidates for the other two books were built privately but never installed or
+executed. Existing credential references remain private.
+
+## Latest stop and shortest recovery path
+
+The corrected Australia request began at **12:21:21.186 Asia/Manila on 9 October**.
+Native UI showed the authenticated trigger, successful Google GET, compact hash
+node and response node. The compact output was exactly:
+
+```json
+{"ok":false,"error":"INTEGRITY_NATIVE_BODY_LIMIT","source_writes":0,"research_writes":0,"table_writes":0}
+```
+
+This is a failed integrity gate even though the native execution nodes were
+green. No valid content hash or coverage receipt was returned. The intended
+response configuration was HTTP 422; the owner's later screenshot only proves
+the one-use listener was unregistered, not the earlier HTTP response status.
+The exact decoded size was not retained and raw workbook data was not exported.
+No retry, cap increase, reduced field mask or incomplete coverage exception was
+used. Execution retention remained disabled; the transient editor execution was
+cleared by loading the restored control graph.
+
+The failed recovery used one execution, one Google GET and zero row mutations.
+Current remaining allowances are **41 executions, 366 mutations and eight Google
+GETs**. There are no outstanding reservations. No remaining critical synthetic
+test was started because complete BEFORE integrity was its prerequisite.
+All prior passing synthetic evidence remains intact.
+
+The smallest next correction is confined to source verification: prepare and
+locally validate smaller sequential ranges, retain every existing value/formula,
+format and metadata field, require exact complete grid coverage and consistent
+metadata across chunks, and return only ordered hashes/coverage. Keep the 8 MiB
+per-response limit, no retries, normal authentication and disabled source-data
+retention. Chunking must not be described as a complete receipt until all chunks
+pass. A changed execution graph, complete request manifest and worst-case budget
+must be reviewed before another Cloud request. The redacted failure alone cannot
+establish how many chunks will fit; no new request-budget ceiling is assumed or
+approved. Report any required extension before making additional requests.
+
+After that gate is approved and passes: finish the remaining native integration,
+duplicate/stale decisions, payload and controlled persistence/provider-failure
+tests, obtain complete paired AFTER receipts, and recheck preservation. The
+owner-mailbox real unsent-draft proof and production release remain separate
+approval gates. Stage 1 is not ready for sign-off and Stage 2 must not begin.
 
 ## Remaining release blockers and provider gate
 
@@ -186,5 +235,9 @@ Private evidence: `readiness-preflight-20261009.json`,
 `external-v2-before-progress.json`, `continuation-ledger.json`,
 `readiness-failed-oauth-proof-20261009.json`,
 `readiness-recovery-candidate-proof-20261009.json`,
+`integrity-recovery-au-before-failure-20261009.json`,
+`integrity-recovery-stop-proof-20261009.json`,
+`integrity-recovery-body-limit-20261009.jpg`,
+`integrity-recovery-control-restored-20261009.jpg`,
 `control-restored-20261009.jpg` and the full local test logs. Git excludes
 all private exports, configuration, credential references and signing material.
