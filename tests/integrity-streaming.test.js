@@ -62,6 +62,22 @@ test('metadata byte cap and partial or duplicate JSON never certify metadata', (
   const partial = v.metadataConsumer(books[0]); partial.write(Buffer.from('{"spreadsheetId":')); assert.throws(() => partial.finish(), /TRUNCATED/);
 });
 function approval(plan) { return { status: 'OWNER_APPROVED', ownerApprovedAt: '2026-10-09T00:00:00Z', manifest_sha256: plan.sha256, credential_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', maxGoogleGets: plan.pairedGets, maxCloudExecutions: 0, preExecutionGates: { status: 'VERIFIED', checked_at: new Date().toISOString(), client_sha256: 'a'.repeat(64), granted_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', storage_verified: true, costs_verified: 'NO_ADDITIONAL_CHARGES', source_writers_paused: true, quota_reads_per_user_minute: 60, quota_reads_per_project_minute: 300 } }; }
+test('single probe uses only one existing GET allowance; complete BEFORE still requires full paired capacity', () => {
+  const plan = v.manifest(books), a = approval(plan), ledger = { consumption: { sheetsGets: 6 }, caps: { sheetsGets: 7 } };
+  v.verifyApproval(a, plan, ledger, 'probe'); assert.throws(() => v.verifyApproval(a, plan, ledger, 'before'), /REQUEST_BUDGET/);
+  ledger.consumption.sheetsGets = 7; assert.throws(() => v.verifyApproval(a, plan, ledger, 'probe'), /REQUEST_BUDGET/);
+});
+test('probe receipt replacement failure retains reserved count and stops before any Google fetch', async () => {
+  const dir = temporary(), f = simulatedFetch(), original = fs.renameSync, probeFile = path.join(dir, 'external-stream-live-probe.json'); let refused = false;
+  try {
+    fs.renameSync = (from, to) => { if (to === probeFile && !refused && JSON.parse(fs.readFileSync(from, 'utf8')).status === 'DISPATCHED') { refused = true; throw Error('synthetic Windows receipt replacement refusal'); } return original(from, to); };
+    await assert.rejects(v.runProbe({ dir, books, approval: approval(v.manifest(books)), token: 'synthetic-token', fetch: f.fetch }), /PERSISTENCE_STOP/);
+    assert.equal(f.calls, 0); assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))).consumption.sheetsGets, 7);
+    const stopped = JSON.parse(fs.readFileSync(probeFile)); assert.equal(stopped.status, 'STOPPED'); assert.equal(stopped.grid, null);
+    const failed = fs.readdirSync(dir).filter(n => n.startsWith('external-stream-live-probe.json.new-')); assert.equal(failed.length, 1); assert.equal(JSON.parse(fs.readFileSync(path.join(dir, failed[0]))).status, 'DISPATCHED');
+    assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false);
+  } finally { fs.renameSync = original; cleanup(dir); }
+});
 function temporary() { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arc-integrity-synthetic-')); fs.writeFileSync(path.join(dir, 'continuation-ledger.json'), JSON.stringify({ caps: { sheetsGets: 100 }, consumption: { sheetsGets: 6, executions: 43, rowMutations: 134 } })); return dir; }
 function cleanup(dir) { const target = path.resolve(dir); if (path.dirname(target) !== path.resolve(os.tmpdir()) || !path.basename(target).startsWith('arc-integrity-synthetic-')) throw Error('UNSAFE_SYNTHETIC_TEST_CLEANUP'); fs.rmSync(target, { recursive: true }); }
 function simulatedFetch({ corruptEnd = false, changedCell = false, failureAt = 0 } = {}) { let calls = 0; return { get calls() { return calls; }, async fetch(url, token, c) { calls++; if (calls === failureAt) throw Error('INTEGRITY_EXTERNAL_HTTP_401_STOP'); const u = new URL(url), book = books.find(b => u.pathname.endsWith('/' + b.spreadsheet_id)), range = u.searchParams.get('ranges'), body = range ? grid(book, range.match(/^'(.+)'!/)[1]) : meta(book); if (corruptEnd && calls === 4) body.properties.title = 'SYNTHETIC changed during read'; if (range && changedCell) body.sheets[0].data[0].rowData[1].values[0].note = 'SYNTHETIC changed between phases'; const bytes = Buffer.from(JSON.stringify(body)); for (let i = 0; i < bytes.length; i += 71) c.write(bytes.subarray(i, i + 71)); return { ...c.finish(), transport: { bytes: bytes.length, chunks: Math.ceil(bytes.length / 71), elapsed_ms: 20, peak_heap_bytes: 1000000, peak_rss_bytes: 1000000, status: 200, identity_encoding: true, complete: true } }; } }; }

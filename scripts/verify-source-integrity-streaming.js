@@ -132,7 +132,7 @@ function atomic(file, data) {
 }
 function verifyApproval(approval, plan, ledger, phase = 'before') {
   if (approval?.status !== 'OWNER_APPROVED' || !approval.ownerApprovedAt || approval.manifest_sha256 !== plan.sha256 || approval.credential_scope !== 'https://www.googleapis.com/auth/spreadsheets.readonly' || approval.maxGoogleGets !== plan.pairedGets || approval.maxCloudExecutions !== 0) fail('EXPLICIT_EXTERNAL_APPROVAL_REQUIRED');
-  if (ledger.consumption.sheetsGets + (phase === 'before' ? plan.pairedGets : plan.onePhaseGets) > ledger.caps.sheetsGets) fail('REQUEST_BUDGET');
+  if (ledger.consumption.sheetsGets + (phase === 'probe' ? 1 : phase === 'before' ? plan.pairedGets : plan.onePhaseGets) > ledger.caps.sheetsGets) fail('REQUEST_BUDGET');
 }
 function verifyBefore(receipt, progress, plan) {
   if (!receipt?.ok || receipt.phase !== 'before' || progress?.status !== 'VERIFIED' || receipt.manifest_sha256 !== plan.sha256 || receipt.google_gets !== plan.onePhaseGets || !Array.isArray(receipt.books) || receipt.books.length !== plan.datasets.length) fail('BEFORE_INCOMPLETE');
@@ -149,7 +149,7 @@ function verifyPreconditions(approval) {
 }
 async function runProbe({ dir, books, approval, token, fetch = request }) {
   const plan = manifest(books), file = path.join(dir, 'external-stream-live-probe.json'), ledgerFile = path.join(dir, 'continuation-ledger.json');
-  verifyApproval(approval, plan, read(ledgerFile)); verifyPreconditions(approval);
+  verifyApproval(approval, plan, read(ledgerFile), 'probe'); verifyPreconditions(approval);
   if (!token) fail('CREDENTIAL_REQUIRED');
   if (fs.existsSync(file) || fs.existsSync(path.join(dir, 'external-stream-before-progress.json'))) fail('EXISTING_ATTEMPT_NO_RETRY');
   const lockFile = path.join(dir, 'external-stream.lock'), lock = fs.openSync(lockFile, 'wx');

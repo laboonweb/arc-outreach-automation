@@ -1,7 +1,7 @@
 # Remaining Stage 1 execution plan, 9 October 2026
 
 **Local proof passed; the external method and cumulative ceiling of 62 are
-conditionally approved. Credential, stability and live-probe gates remain
+conditionally approved. Live-probe persistence and complete coverage gates remain
 incomplete. Stage 1 and production release remain blocked.** No Cloud execution,
 Google data request, provider operation or production change ran during this
 correction.
@@ -131,7 +131,7 @@ part of this plan. Local connectivity/TLS and the OAuth grant are still unproved
 
 ## Local evidence
 
-Full suite: **443 passed, zero failed/skipped**, including 23 streaming tests for
+Full suite: **456 passed, zero failed/skipped**, including 25 streaming tests for
 determinism, all 208 headers, full metadata/cell coverage, association changes,
 invalid sparse shapes, incomplete/truncated JSON, duplicate keys, UTF-8, bounds,
 authentication/redirect refusal, wire/memory caps, before/after mismatch,
@@ -213,11 +213,50 @@ validated candidate exactly. No application logic or Cloud graph was changed.
    require separate owner approval.
 
 **Current gates:** the owner conditionally approved ceiling 62, read-only OAuth
-setup and a single reviewed live request before continuation. The live ledger
-still records 6/14 GETs, 43/84 executions and 134/500 mutations, with no
-reservations. Activate the higher cap only after the pre-execution gates are
-verified. No runnable approval file, credential or cap update has been made.
+setup and a single reviewed live request before continuation. Ordinary-Chrome
+authorization passed; probe persistence failed before fetch, as detailed below.
+The ledger conservatively records 7/14 GET slots, 43/84 executions and 134/500
+mutations. Private pinned single-probe approval and owner-restricted credentials
+exist. No cap update or subsequent request has been made.
+The owner subsequently configured the Desktop client in ordinary Chrome and
+confirmed its sole read-only scope, Testing audience, owner test user and current
+300/60 quotas, no linked billing and paused source edits/runs. Its replacement
+JSON is local with verified owner-only ACLs; the screenshot-exposed older secret
+was disabled. The new [PKCE helper](integrity-google-oauth.md) has 11 local OAuth
+regressions and can invoke only the single probe. A new private manifest pins the
+one-request budget gate; the earlier manifests and ledger baselines are preserved.
+Private prerequisites started as VERIFIED_EXCEPT_OAUTH; exact granted scope was
+then verified and retained in a separate credential-free approval receipt. The
+probe remains failed and the active cap remains 14. A fresh probe needs
+only one GET of current allowance, while a complete BEFORE continues to require
+the full paired allowance. No automatic activation of ceiling 62 occurs.
+
 The local gate revision passes five additional regressions: single-counted
 probe/reuse/exact budget, missing/stale/scope/quota/cost/storage/pause refusal,
 failed/tampered probe rejection, fresh metadata drift and actual transport
 timeout/no retry. Existing passing Cloud scenarios are preserved.
+
+## Ordinary-Chrome authorization result and required stop
+
+The owner completed ordinary-Chrome consent. One OAuth token POST succeeded and
+granted exactly Sheets read-only; credentials stay in the owner-restricted local
+folder, and tokens were not persisted. The helper stopped on
+`INTEGRITY_EXTERNAL_PERSISTENCE_STOP` replacing the probe's pre-dispatch receipt.
+The failed temporary file has DISPATCHED status and no grid; its replacement
+failure precedes the Google fetch call. A targeted local regression reproduces
+that exact stage with zero fetches, a retained counted slot and preserved failed
+receipt. No live payload, complete BEFORE, AFTER or probe certification exists.
+The OS error was redacted by the earlier writer; its precise cause remains
+unverified. Current file permissions and attributes are normal. Do not infer a
+permission fix or repeat the live call.
+
+Counters remain 43/84 executions and 134/500 mutations. GET accounting is now
+7/14: six earlier GETs and one conservatively counted pre-dispatch reservation.
+No Cloud graph/table, source data, provider record or candidate changed. The
+remaining 55 GETs and all Cloud executions are stopped. The active cap stays 14;
+if the failed reservation is retained, completing a fresh probe and remaining
+55 GETs would total 63, beyond the conditional ceiling 62. Diagnose and locally
+prove the receipt-write correction first. Present the bounded retry and either
+an explicitly audited reservation reconciliation or ceiling 63 for owner review
+before any new live request. Preserve the failed probe, original approval,
+authorized grant metadata and ledger baselines; do not clear them to rerun.

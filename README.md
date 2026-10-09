@@ -11,19 +11,36 @@ approved 8 MiB body limit. It returned the redacted failure
 testing stopped without retry. The isolated control was restored exactly, and
 fresh production and synthetic preservation checks passed. The unchanged local
 candidate has been rebuilt with all six hashes unchanged. Latest full local suite:
-443 passed, zero failed/skipped, including 23 external streaming integrity tests.
-Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 6/14 integrity
-GETs. Complete paired source integrity remains blocked. The external, read-only
+456 passed, zero failed/skipped, including 25 external streaming integrity tests
+and 11 local OAuth/PKCE tests.
+Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 7/14 integrity
+GET slots (six earlier GETs plus one retained pre-dispatch reservation).
+Complete paired source integrity remains blocked. The external, read-only
 streaming verifier has been demonstrated locally on the 208-column schema and
 32-66 MB synthetic responses, with less than 23 MB peak heap. Its 56 new GETs and
 separate read-only OAuth connection are conditionally approved subject to verified
 client, scope, storage, quota, costs and a single live probe. The dedicated Google
 project and Sheets API are prepared; actual quotas are verified and the owner
-confirmed no linked billing account. Google rejected sign-in from the automated
-Chrome browser; the live path stopped before a client or grant. No Cloud execution or Google data
-request was made during this correction. The probe now pauses for review and is
+confirmed no linked billing account. After Google rejected automated Chrome,
+the owner configured a Desktop client in ordinary Chrome with only the Sheets
+read-only scope. The downloaded replacement credential has an owner-restricted
+ACL; the screenshot-exposed older secret was disabled by the owner. The tested
+[local PKCE helper](docs/integrity-google-oauth.md) requires manual consent,
+validates the actual granted scope and invokes only one bounded probe. Ordinary
+Chrome authorization succeeded: one token POST granted exactly Sheets read-only.
+The probe stopped with `INTEGRITY_EXTERNAL_PERSISTENCE_STOP` while replacing its
+counted pre-dispatch receipt, before calling the Google fetch. No live workbook
+response or usable probe receipt exists. The reservation remains counted, all
+failed files are preserved, and no retry or remaining GET ran. The exact Windows
+replacement error was not recorded; current file ACLs/attributes do not identify
+its cause. A local regression verifies this failure stage stops before fetch.
+No Cloud execution ran during this correction. A successful probe uses one GET
+within the existing ceiling and pauses
+for review; complete BEFORE still requires paired capacity. Its grid is
 reused in BEFORE, preserving exactly 56 new GETs and the cumulative ceiling of 62.
-Stage 2 and production publication remain on hold.
+Stage 2 and production publication remain on hold. The active cap remains 14;
+conservatively retaining this failed reservation would require ceiling 63 to
+complete a fresh probe plus its remaining 55 GETs. No extension is assumed.
 
 See the [compact remaining execution plan](docs/integrity-streaming-stage1-plan.md)
 and [preserved Cloud readiness evidence](docs/readiness-20261009.md).
