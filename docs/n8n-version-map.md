@@ -24,3 +24,13 @@ Add a dated mapping row for each future approved update with commit SHA, expecte
 old version, confirmed new version, export hash, inactive/published state and
 evidence references. Record staging separately from production. Never infer a
 production version from a local build, a Git merge or an execution number.
+
+9 October 2026 development continuation: all six production versions and full
+node/connection hashes above were rechecked unchanged, as were all four complete
+production tables. The six local candidate JSON hashes also remained unchanged
+after rebuilding. The development verification slice passed 417 local tests;
+its proposed four-node integrity probe passed SDK validation but was not
+installed or executed. No new production or staging workflow version exists.
+Resolve the exact development Git SHA with `git log -1 --format=%H` on that
+checkpoint; its private receipt records the SHA and unchanged candidate hashes.
+See [readiness and pending integrity approval](readiness-20261009.md).
