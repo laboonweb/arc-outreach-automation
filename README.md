@@ -2,20 +2,26 @@
 
 **Current development checkpoint, 9 October 2026: signed-off local Stage 0
 implementation with bounded Stage 1 corrections. Cloud validation is incomplete;
-this revision is not production validated.** Editor authentication remains stable.
+this revision is not production validated.** Editor authentication was stable at
+the last Cloud check.
 The owner approved the corrected 256-column integrity recovery. Its first Google
 GET succeeded, but the actual Cloud validator rejected a response exceeding the
 approved 8 MiB body limit. It returned the redacted failure
 `INTEGRITY_NATIVE_BODY_LIMIT`; no usable BEFORE receipt was produced. Cloud
 testing stopped without retry. The isolated control was restored exactly, and
 fresh production and synthetic preservation checks passed. The unchanged local
-candidate retains its recorded 420-test and SDK validation results.
+candidate has been rebuilt with all six hashes unchanged. Latest full local suite:
+438 passed, zero failed/skipped, including 18 external streaming integrity tests.
 Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 6/14 integrity
-GETs. Complete paired source integrity remains blocked. A smaller complete-coverage
-read plan and any request-budget revision require review before another Cloud run.
+GETs. Complete paired source integrity remains blocked. The external, read-only
+streaming verifier has been demonstrated locally on the 208-column schema and
+32-66 MB synthetic responses, with less than 23 MB peak heap. Its 56 new GETs and
+separate read-only OAuth grant require approval; no Cloud or Google data request
+was made during this correction.
 Stage 2 and production publication remain on hold.
 
-See the [current readiness report and proposed integrity replacement](docs/readiness-20261009.md).
+See the [compact remaining execution plan](docs/integrity-streaming-stage1-plan.md)
+and [preserved Cloud readiness evidence](docs/readiness-20261009.md).
 
 See [version control and release procedure](docs/version-control.md) and
 [Git to n8n mapping](docs/n8n-version-map.md). Git pushes do not deploy n8n.

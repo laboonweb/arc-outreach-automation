@@ -9,6 +9,10 @@ Cloud testing stopped without retry. The original isolated control graph/setting
 were restored and verified exactly, inactive and unpublished. Fresh preservation
 checks passed. No table/source/provider write occurred. Stage 1 remains incomplete.
 This report preserves the earlier checkpoints and the latest stopped recovery.
+The subsequent [external streaming correction and remaining execution plan](integrity-streaming-stage1-plan.md)
+passed local demonstration and all 438 tests. The six application candidate hashes
+remain unchanged. No further Cloud execution or Google data request occurred;
+external credential access and the proposed 62-GET cumulative ceiling are pending.
 
 ## Current results
 
@@ -21,7 +25,7 @@ This report preserves the earlier checkpoints and the latest stopped recovery.
 | Passing synthetic evidence | Preserved. All 26 synthetic rows remain unchanged. Three staging workflows retain their versions; the control was temporarily replaced and restored exactly with a new version. Passing scenarios were not rerun. |
 | Google redirect | Reviewed exact HTTPS Google export host, workbook path and sole `format=xlsx` query. Initial 307 recorded without following; destination issued as a separate counted GET, with no cookies or credentials forwarded. |
 | Destination response | FAIL: HTTP 400. No workbook was downloaded or baseline established; no retry or further source request followed. The response does not establish whether the failure arose from URL lifetime, export-session requirements or another Google constraint. |
-| Local validation | Latest full suite: 420 passed, zero failed/skipped. Earlier checkpoint: 417 passed. Local loopback fixture access was explicitly allowed; no external test call occurred. |
+| Local validation | Latest full suite: 438 passed, zero failed/skipped, including 18 new streaming integrity regressions. Earlier checkpoints: 420 and 417 passed. Local loopback fixture access was explicitly allowed; no external test call occurred. |
 | Candidate rebuild | All six rebuilt candidate JSON hashes are unchanged. Application logic and existing research/compliance/protection/copy gates were not edited. |
 | First OAuth source probe | Owner authorized and ran it once. Screenshot proves Basic Auth trigger and Google GET success, followed by hash Code failure. Retention was disabled; the exact exception became unavailable after the owner closed the editor. No usable baseline. Count the failed execution and GET. |
 | Local correction | Confirmed defect: the output schema has 208 columns, exceeding the original 100-column range/ceiling. Corrected probe uses A1:IV5000 (256 columns), retains the 8 MiB body gate and rejects incomplete coverage. Adds redacted failure JSON and HTTP 422. The earlier Cloud exception remains unconfirmed. Corrected SDK validates with four nodes and no warnings. |
@@ -158,16 +162,16 @@ GETs**. There are no outstanding reservations. No remaining critical synthetic
 test was started because complete BEFORE integrity was its prerequisite.
 All prior passing synthetic evidence remains intact.
 
-The smallest next correction is confined to source verification: prepare and
-locally validate smaller sequential ranges, retain every existing value/formula,
-format and metadata field, require exact complete grid coverage and consistent
-metadata across chunks, and return only ordered hashes/coverage. Keep the 8 MiB
-per-response limit, no retries, normal authentication and disabled source-data
-retention. Chunking must not be described as a complete receipt until all chunks
-pass. A changed execution graph, complete request manifest and worst-case budget
-must be reviewed before another Cloud request. The redacted failure alone cannot
-establish how many chunks will fit; no new request-budget ceiling is assumed or
-approved. Report any required extension before making additional requests.
+The correction is now confined to an external streaming verifier, locally
+demonstrated with the actual 208-column schema and 32-66 MB synthetic responses.
+It retains full cell and metadata coverage and returns only compact hashes.
+It leaves the native 8 MiB validator and Cloud workflows unchanged. The new
+external method uses one sheet per streamed request, strict independent wire and
+memory bounds, metadata checks and complete BEFORE/AFTER comparison. Its fixed
+56 new GETs require a cumulative ceiling of 62, plus a separate owner-approved
+read-only OAuth grant. No new permission, cap or source request is assumed.
+The exact scope, costs, limitations and remaining synthetic reservation are in
+the [execution plan](integrity-streaming-stage1-plan.md).
 
 After that gate is approved and passes: finish the remaining native integration,
 duplicate/stale decisions, payload and controlled persistence/provider-failure
