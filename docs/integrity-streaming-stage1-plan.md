@@ -1,11 +1,22 @@
 # Remaining Stage 1 execution plan, 9 October 2026
 
-**Local proof passed; the external method and cumulative ceiling of 62 are
-conditionally approved. Local receipt recovery is proven; live-probe and complete coverage gates remain
-incomplete. Stage 1 and production release remain blocked.** The corrected
-persistence attempt used one token POST and one Sheets GET, then stopped on
-research-header validation. No Cloud execution, provider operation or production
-write ran during this correction. The local header fix has not run live.
+**Current status supersedes the historical stop below:** the owner approved
+67 counted Google GETs/five OAuth token POSTs. Complete compact BEFORE passed
+all 28 reads and the critical synthetic Cloud continuation finished. Usage is
+39/67 GET slots, 4/5 token POSTs, 71/84 executions and 154/500 mutations.
+The only remaining Stage 1 execution is 28 AFTER reads after fresh prerequisites
+and separate ordinary-browser consent. No further Cloud run is needed.
+See the [consolidated report](stage1-critical-validation-20261009.md).
+The following stopped attempts remain historical evidence, not current authority.
+
+**The corrected live research-grid probe passed; complete BEFORE stopped on the
+next source-tab response. Stage 1 and production release remain blocked.**
+The owner approved 64 counted GETs/four OAuth token POSTs and conditional
+probe-to-BEFORE continuation. It used three GETs/one POST; totals are now
+11/64 GET slots, three/four token POSTs, 43/84 executions and 134/500 mutations.
+All production graphs/versions/tables and original synthetic state passed fresh
+preservation checks. No Cloud execution, provider operation or production write
+ran during this gate. The compact request/transport correction below is local only.
 The previously reviewed develop commits were pushed through `6a80b5e` first;
 main remains `b187df8`. Git does not deploy n8n.
 
@@ -14,7 +25,8 @@ main remains `b187df8`. Git does not deploy n8n.
 Run `scripts/verify-source-integrity-streaming.js` on the owner's local computer,
 using Node built-ins. Its default command prints a plan and makes no requests.
 It never passes workbook bodies through n8n or writes them to disk. There is no
-change to the native 8 MiB validator or the six application candidates.
+change to the native 8 MiB validator. Two subsequent application fixes were
+required by specific critical Cloud failures and are documented in the report.
 
 Each workbook has a metadata-only read, one separately streamed read for every
 registered sheet, then an identical metadata-only read. Repeat this sequence for
@@ -69,8 +81,8 @@ there is no automatic exemption or retry.
 
 | Item | Fixed plan |
 |---|---|
-| Sheets data requests | 8 counted slots now; 56 fresh GETs would mean **64 cumulative**. Original conditional ceiling 62; 64 awaits approval. Active cap remains 14. |
-| OAuth token POSTs | Two consumed; a new probe plus separately gated BEFORE/AFTER would mean five total. Original planned ceiling two is exhausted; increases await approval. Current helper maximum four also requires a reviewed correction for that future five-POST scope. |
+| Sheets data requests | 11 counted slots now; 56 fresh GETs would mean **67 cumulative**. Active approved cap remains 64; 67 awaits approval. |
+| OAuth token POSTs | Three consumed; fresh combined probe/BEFORE and separate AFTER need two more, **five cumulative**. Active approved ceiling four; five awaits approval. Default stays two. |
 | n8n executions / source writes for integrity | 0 / 0 |
 | Response limits | 1 MiB buffered metadata; 64 MiB streamed per sheet, identity encoding only |
 | Parser limits | 16 KiB decoder input; token 1 MiB, depth 32, 128 keys/object, 256-byte keys |
@@ -99,9 +111,9 @@ access token for each phase; pass it privately in the process environment,
 never a chat message, command-line literal or Git file. The runner removes its
 environment entry after reading it and logs only redacted failure codes.
 No refresh token is persisted. The original design planned two token-exchange
-POSTs. Both have since been consumed by stopped probes; stopping after each
-future phase without saving tokens now requires five total. This increase awaits
-approval. Ordinary owner sign-in browser traffic is not a spreadsheet integrity
+POSTs. Both were consumed by stopped probes. The prepared combined probe/BEFORE
+phase and separate AFTER consent need four total; this increase and conditional
+continuation await approval. Ordinary owner sign-in browser traffic is not a spreadsheet integrity
 request. The grant reads Sheets on the owner's account; the runner additionally
 restricts access to the three registry IDs. Exact read-only authorization passed;
 the Sheets transport and complete live integrity coverage remain unverified.
@@ -137,7 +149,7 @@ bounded Sheets response is still required.
 
 ## Local evidence
 
-Full suite: **465 passed, zero failed/skipped**, including 28 streaming tests for
+Full suite: **470 passed, zero failed/skipped**, including 33 streaming tests for
 determinism, all 208 headers, full metadata/cell coverage, association changes,
 invalid sparse shapes, incomplete/truncated JSON, duplicate keys, UTF-8, bounds,
 authentication/redirect refusal, wire/memory caps, before/after mismatch,
@@ -161,16 +173,17 @@ validated candidate exactly. No application logic or Cloud graph was changed.
 1. After approval of this method/GET ceiling and establishment of the separate
    read-only grant, verify owner editor authentication, current trial/storage
    headroom and costs. Reconcile the saved production/staging baselines; establish
-   the source editing pause. Run `--run probe` once: the first registered
+   the source editing pause. With explicit conditional phase approval, run
+   `--authorize-phase <attempt> before`: the first registered
    workbook's Arc Research grid, all 208 headers and complete allocated grid,
    under the existing 64 MiB streaming/60-second/memory bounds. This performs
-   exactly one GET and exits with AWAITING_REVIEW, not a complete baseline.
+   exactly one initial GET, not a complete baseline.
    Its receipt includes transport bytes/chunks/time/peak memory, association
-   hashes and coverage. Review material differences before recording its exact
-   receipt hash in the private approval. A failed or altered probe cannot be
-   resumed or retried. If approved, BEFORE reuses this grid receipt, validates
+   hashes and coverage. Every existing bound and completeness gate must pass
+   before its exact receipt hash is pinned. A failed or altered probe cannot be
+   resumed or retried. The approved conditional BEFORE continuation reuses this grid receipt, validates
    its property hashes against fresh metadata and makes the other 27 GETs.
-   AFTER makes 28 GETs, preserving exactly 56 new GETs. Any incomplete coverage
+   A separate manual consent for AFTER makes 28 GETs, preserving exactly 56 new GETs. Any incomplete coverage
    or failed receipt stops before synthetic testing. No native 8 MiB cap changes.
 2. Reuse the four existing inactive/unpublished staging workflows, four tables
    and eight identities. Preserve all already passing manual research, saved
@@ -322,3 +335,53 @@ five total token POSTs and need an approved, tested authorization guard change.
 Neither resource extension nor another live request is authorized. Preserve
 both stopped probes, their approvals, the saved layouts and all passing Cloud
 evidence. Production release remains blocked.
+
+## Prepared conditional continuation
+
+To avoid another separate probe consent, the phase helper now locally proves
+one probe plus the remaining 27 BEFORE reads under the same in-memory grant,
+then stops before Cloud testing. AFTER requires its own fresh consent and all
+28 comparisons. Two new regressions prove complete paired coverage, exact
+accounting and refusal of missing approval, insufficient capacity or a failed
+probe. Full local suite: 467 passed. This changes no application candidate.
+
+The concrete permission delta is 64 cumulative counted GET slots and four
+cumulative OAuth token POSTs, with conditional probe-to-BEFORE continuation.
+The active ledger remains 14/84/500 and usage remains 8/43/134 until approved.
+Fresh quota, no-billing and source-pause confirmation is required before consent.
+No token is persisted and no helper invokes Cloud or providers. Earlier
+single-probe stop scopes and failed evidence above remain historical records.
+
+## Live probe passed; source transport stop and compact correction
+
+The approved combined attempt passed the complete Australia Arc Research grid:
+1,000 allocated rows, 221 physical columns and all 208 required fields;
+49,811,250 bytes in 19,228 ms, heap 24,368,392 bytes and RSS 104,591,360 bytes.
+The following metadata read passed at 24,292 bytes. The `250 Sharp ICPs` read
+reported `INTEGRITY_EXTERNAL_TRUNCATED`. The helper stopped immediately and
+preserved the valid probe, failed phase, exact grant metadata and all earlier
+evidence. No complete BEFORE exists and no Cloud scenario ran.
+
+Local native IncomingMessage regressions demonstrate that calling destroy before
+settling a size/parser failure can synchronously emit aborted and mask the cause
+as TRUNCATED. The corrected transport settles the initiating error first and
+persists bounded numeric failure metrics; it still stops without retries or
+partial certification. The initiating live cause cannot be recovered from the
+old receipt and is not asserted as known.
+
+Google's [Sheets discovery schema](https://raw.githubusercontent.com/googleapis/google-api-go-client/main/sheets/v4/sheets-api.json)
+specifies prettyPrint=true by default. Setting it false removes indentation only.
+The local complete 400 x 208 dense fixture hashes identically at 77,403,162
+indented bytes and 37,612,634 compact bytes. Every original field, formula,
+format, note, association, range and schema check remains included. Response,
+memory, timeout and native Cloud limits are unchanged. This revised URL has not
+run live and cannot be promised to fit every actual sheet.
+
+A fresh fixed 56-read pair needs 67 cumulative counted slots and five cumulative
+OAuth token POSTs. The active caps remain 64/four. No further request is
+authorized after this stop. If that explicit recovery is approved, pin the
+corrected manifest, retain every failed slot/receipt, use fresh manual consent
+for the compact probe plus 27 BEFORE reads, and stop on any failed bound. Only a
+complete BEFORE permits the already bounded remaining synthetic Cloud tests.
+AFTER remains 28 reads with its own fresh consent. Do not weaken validation,
+raise body limits, resume a failed phase or rerun passing Cloud scenarios.

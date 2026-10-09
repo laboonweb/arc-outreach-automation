@@ -16,12 +16,13 @@ function compile(before,stem){
   if(n.parameters.jsCode!==code)changed.push(n.name);
   new (Object.getPrototypeOf(async function(){}).constructor)(n.parameters.jsCode);
  }
+ if(stem==='zoho')for(const name of require('./build-phase2-cloud').guardProviderPersistence(w))if(!changed.includes(name))changed.push(name);
  assert.deepEqual(w.connections,(before.workflow||before).connections);
- for(const n of w.nodes){const prior=(before.workflow||before).nodes.find(x=>x.name===n.name),strip=x=>{const out=structuredClone(x);if(out.parameters?.jsCode)out.parameters.jsCode='CANONICAL_CODE';return out;};assert.deepEqual(strip(n),strip(prior));}
+ for(const n of w.nodes){const prior=(before.workflow||before).nodes.find(x=>x.name===n.name),strip=x=>{const out=structuredClone(x);if(out.parameters?.jsCode)out.parameters.jsCode='CANONICAL_CODE';if(stem==='zoho'&&out.name==='Persist provider result')out.alwaysOutputData=true;return out;};assert.deepEqual(strip(n),strip(prior));}
  const added=stem==='panel'?require('./build-panel-ingress').attach(w):[];
  if(added.length&&!changed.includes('Decision request'))changed.push('Decision request');
  w.active=false;delete w.activeVersion;delete w.activeVersionId;delete w.pinData;
- return {workflow:w,changed,added:added.map(n=>n.name),proof:{graph_unchanged:!added.length,ingress_error_branch:!!added.length,existing_noncode_parameters_unchanged:true,active:false,published:false,source_writes:0,provider_calls:0,emails_sent:0,dms_sent:0}};
+ return {workflow:w,changed,added:added.map(n=>n.name),proof:{graph_unchanged:!added.length,ingress_error_branch:!!added.length,existing_noncode_parameters_unchanged:stem!=='zoho',provider_receipt_write_guard:stem==='zoho',active:false,published:false,source_writes:0,provider_calls:0,emails_sent:0,dms_sent:0}};
 }
 function build(){const manifest=[];for(const stem of ['panel','draft','review','zoho','sync','copy']){const before=JSON.parse(fs.readFileSync(path.join(ROOT,stem+'-before.json'),'utf8')),result=compile(before,stem),sdk=require('./workflow-sdk-compact').compact(result.workflow);fs.writeFileSync(path.join(ROOT,stem+'-local.json'),JSON.stringify(result.workflow,null,2));fs.writeFileSync(path.join(ROOT,stem+'-local.sdk.js'),sdk);manifest.push({stem,id:before.id,expected_version:before.versionId,was_active:before.active,changed_nodes:result.changed,added_nodes:result.added,sdk_characters:sdk.length,...result.proof});}fs.writeFileSync(path.join(ROOT,'build-manifest.json'),JSON.stringify(manifest,null,2));return manifest;}
 module.exports={compile,build};if(require.main===module)console.log(build().map(x=>({stem:x.stem,changed_nodes:x.changed_nodes.length,active:x.active,published:x.published})));

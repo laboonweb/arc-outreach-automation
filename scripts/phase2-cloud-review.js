@@ -125,4 +125,9 @@ function receipt(claimRow,request,response,now=new Date().toISOString()){
  if(d.operator_workspace){delete d.operator_provider_request;require('./phase2-operator-lifecycle').audit(d,'PROVIDER_RECEIPT',d.review?.reviewer||'Operator',now,JSON.parse(claimRow.payload),{provider_status:d.provider_status,provider_draft_id:d.provider_draft_id||'',message_hash:r.message_hash});}
  d.sent_at=null;d.followup_due_at=null;return q.pack(d,{claim_execution:d.claim_execution,claim_at:d.claimed_at,reviewer:d.review?.reviewer||'',reviewed_hash:d.approved_hash});
 }
-module.exports={REVIEW_STATES,hash,reviewFor,assertVisible,gate,adapter,apply,process,claim,request,receipt,operationsInitialApprovedForOperator:operationsInitialApproved};
+function persistedReceipt(expected,rows){
+ const keys=['queue_key','draft_key','lead_id','payload','state','provider_status','provider_draft_id','sent','sent_at','followup_due_at'];
+ if(rows.length!==1||keys.some(k=>rows[0][k]!==expected[k]))throw Error('PROVIDER_RECEIPT_WRITE_CONFLICT_STOP');
+ const row=rows[0];return {state:row.state,provider_draft_id:row.provider_draft_id,sent:row.sent,sent_at:row.sent_at,followup_due_at:row.followup_due_at};
+}
+module.exports={REVIEW_STATES,hash,reviewFor,assertVisible,gate,adapter,apply,process,claim,request,receipt,persistedReceipt,operationsInitialApprovedForOperator:operationsInitialApproved};

@@ -146,7 +146,8 @@ Data Table size/performance still require an approved Cloud smoke test.
 See [implementation report](operator-lifecycle-report.md) for exact files and
 results. `node scripts/build-operator-lifecycle.js` rebuilds six ignored local
 workflow JSON/SDK artifacts from the read-only current baselines. It changes
-canonical Code content only, preserves graph/non-Code configuration and makes
+canonical Code content plus the explicitly reviewed provider-persistence
+alwaysOutputData guard, preserves other graph/non-Code configuration and makes
 every local export inactive. It never calls a publish/update/execute endpoint.
 
 Remaining limits:
@@ -166,8 +167,9 @@ Remaining limits:
 - A CLAIMED or ambiguous provider result stays locked for existing reconciliation.
   No retry/reset/receipt-forging control is added. Single execution at a time
   remains required; the Cloud Data Table pattern is not a transactional send ledger.
-- Cloud execution, real Data Table persistence/retention, real provider idempotency
-  and real-device behavior have not been exercised by this local-only request.
+- Subsequent Stage 1 exercised synthetic Cloud execution and actual Data Table
+  persistence/failure recovery; see the [current report](stage1-critical-validation-20261009.md).
+  Real provider idempotency and real-device behavior remain unverified.
 - The full panel SDK export exceeds the connector's 300,000-character validation
   limit. Its nine changed node configurations pass native schema validation; its
   full existing graph and every runtime parameter pass local exact round-trip

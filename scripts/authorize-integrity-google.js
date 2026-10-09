@@ -1,9 +1,9 @@
 'use strict';
-// Owner-operated system-browser OAuth; only the single reviewed integrity probe.
+// Owner-operated system-browser OAuth; one explicitly approved integrity scope.
 const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
 const http = require('node:http'), https = require('node:https'), { execFileSync } = require('node:child_process');
 const integrity = require('./verify-source-integrity-streaming');
-const { JsonStream } = require('./integrity-json-stream');
+const { JsonStream, semanticHash } = require('./integrity-json-stream');
 const { save } = require('./write-integrity-state');
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const PROJECT = 'arc-integrity-stage-1', AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -71,7 +71,9 @@ function exchangeCode(client, code, redirect, verifier, request = https.request)
     req.on('error', () => stop('TOKEN_TRANSPORT_STOP')); req.end(body);
   });
 }
-async function authorize({ client, ready, exchange = exchangeCode, beforeExchange = () => {}, timeoutMs = 600000 }) {
+async function authorize({ client, ready, exchange = exchangeCode, beforeExchange = () => {}, timeoutMs = 600000, phase = 'probe' }) {
+  if (!['probe', 'before', 'after'].includes(phase)) fail('PHASE_APPROVAL_REQUIRED');
+  const operation = phase === 'probe' ? 'One bounded integrity probe runs after consent, then stops.' : phase === 'before' ? 'One bounded probe must pass before the remaining 27 BEFORE reads run. The helper then stops before Cloud testing.' : 'Exactly 28 AFTER integrity reads compare the complete baseline, then the helper stops.';
   const p = pkce(), startPath = '/start/' + crypto.randomBytes(24).toString('hex');
   let server, timer, used = false, settled = false;
   return new Promise((resolve, reject) => {
@@ -80,8 +82,8 @@ async function authorize({ client, ready, exchange = exchangeCode, beforeExchang
       const port = server.address().port, host = '127.0.0.1:' + port, redirect = 'http://' + host;
       const send = (status, text) => { res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; base-uri 'none'; frame-ancestors 'none'" }); res.end(text); };
       if (req.method !== 'GET' || req.headers.host !== host || req.socket.remoteAddress !== '127.0.0.1' || req.headers.origin) { send(403, 'Local request refused.'); return; }
-      if (req.url === startPath && !used) { send(200, '<h1>Arc Integrity Stage 1</h1><p>Choose your owner account. Approve only read-only Google Sheets access.</p><p><a rel="noreferrer" href="' + authUrl(client, redirect, p).replace(/&/g, '&amp;') + '">Continue to Google in this browser</a></p><p>One bounded integrity probe runs after consent, then stops.</p>'); return; }
-      if (req.url === '/complete') { send(200, '<p>Authorization returned to the local helper. Check Codex for the probe result. No additional requests will run.</p>'); return; }
+      if (req.url === startPath && !used) { send(200, '<h1>Arc Integrity Stage 1</h1><p>Choose your owner account. Approve only read-only Google Sheets access.</p><p><a rel="noreferrer" href="' + authUrl(client, redirect, p).replace(/&/g, '&amp;') + '">Continue to Google in this browser</a></p><p>' + operation + '</p>'); return; }
+      if (req.url === '/complete') { send(200, '<p>Authorization returned to the local helper. Check Codex for the approved ' + phase + ' result. No Cloud execution, source write or provider call runs here.</p>'); return; }
       let u; try { u = new URL(req.url, redirect); } catch { send(400, 'Invalid callback.'); return; }
       if (u.pathname !== '/' || used) { send(404, 'Local page unavailable.'); return; }
       used = true;
@@ -96,50 +98,70 @@ async function authorize({ client, ready, exchange = exchangeCode, beforeExchang
 }
 function verifyTokenBudget(dir, approval) {
   const cap = approval.maxOAuthTokenPosts ?? 2;
-  if (!Number.isInteger(cap) || cap < 1 || cap > 4) fail('TOKEN_POST_BUDGET_STOP');
+  if (!Number.isInteger(cap) || cap < 1 || cap > 5) fail('TOKEN_POST_BUDGET_STOP');
   let count = 0;
-  for (const name of fs.readdirSync(dir).filter(n => /^owner-probe-authorization(?:-[a-f0-9]{32})?\.json$/.test(n))) {
+  for (const name of fs.readdirSync(dir).filter(n => /^owner-(?:probe|before|after)-authorization(?:-[a-f0-9]{32})?\.json$/.test(n))) {
     const n = JSON.parse(fs.readFileSync(path.join(dir, name))).token_posts_dispatched;
     if (![0, 1].includes(n)) fail('TOKEN_POST_ACCOUNTING_STOP'); count += n;
   }
   if (count >= cap) fail('TOKEN_POST_BUDGET_STOP');
   return count;
 }
-async function main(mode, attempt) {
-  if (!['--check', '--authorize-probe'].includes(mode)) { console.log(JSON.stringify({ live_calls: 0, scope: SCOPE, modes: ['--check (offline client and ACL check)', '--authorize-probe (manual consent; one probe only)'] })); return; }
+async function runApprovedScope(options, phase) {
+  if (phase === 'probe') return integrity.runProbe(options);
+  if (!['before', 'after'].includes(phase) || options.approval.singleProbeOnly !== false || !Array.isArray(options.approval.allowedPhases) || !options.approval.allowedPhases.includes(phase)) fail('PHASE_APPROVAL_REQUIRED');
+  integrity.verifyApproval(options.approval, integrity.manifest(options.books), JSON.parse(fs.readFileSync(path.join(options.dir, 'continuation-ledger.json'))), phase);
+  if (phase === 'before') {
+    if (options.approval.continueAfterValidatedProbe !== true) fail('PROBE_CONTINUATION_APPROVAL_REQUIRED');
+    const probe = await integrity.runProbe(options);
+    options.approval = { ...options.approval, liveProbeReviewedSha256: semanticHash(probe) };
+    integrity.verifyProbe(probe, options.approval, integrity.manifest(options.books));
+    save(path.join(options.dir, 'reviewed-probe-approval-' + options.approval.probeAttempt + '.json'), options.approval, true);
+  } else {
+    const reviewed = JSON.parse(fs.readFileSync(path.join(options.dir, 'reviewed-probe-approval-' + options.approval.probeAttempt + '.json')));
+    if (reviewed.manifest_sha256 !== options.approval.manifest_sha256 || reviewed.probeAttempt !== options.approval.probeAttempt) fail('PROBE_REVIEW_CHANGED');
+    options.approval = { ...options.approval, liveProbeReviewedSha256: reviewed.liveProbeReviewedSha256 };
+  }
+  return integrity.runPhase({ ...options, phase });
+}
+async function main(mode, attempt, requestedPhase) {
+  if (!['--check', '--authorize-probe', '--authorize-phase'].includes(mode)) { console.log(JSON.stringify({ live_calls: 0, scope: SCOPE, modes: ['--check (offline client and ACL check)', '--authorize-probe (manual consent; one probe only)', '--authorize-phase <attempt> <before|after> (requires separate explicit phase approval)'] })); return; }
   const dir = path.resolve(__dirname, '../private/operator-stage1'), credentialDir = path.join(dir, 'google-oauth');
   const selected = readClient(path.join(credentialDir, 'credentials-google-desktop.json'));
   if (mode === '--check') { console.log(JSON.stringify({ ok: true, project: selected.project, desktop: true, owner_only_storage: true, client_sha256: selected.client_sha256, live_calls: 0 })); return; }
+  const phase = mode === '--authorize-phase' ? requestedPhase : 'probe';
+  if (!['probe', 'before', 'after'].includes(phase) || (mode === '--authorize-phase' && (!attempt || phase === 'probe'))) fail('PHASE_APPROVAL_REQUIRED');
   const books = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config/datasets.json'))).datasets;
   if (attempt !== undefined && !/^[a-f0-9]{32}$/.test(attempt)) fail('PROBE_ATTEMPT_ID');
   const suffix = attempt ? '-' + attempt : '', approval = JSON.parse(fs.readFileSync(path.join(dir, 'external-stream-approval' + suffix + '.json'))), plan = integrity.manifest(books);
   if (approval.probeAttempt !== attempt) fail('PROBE_ATTEMPT_ID');
-  if (approval.singleProbeOnly !== true || approval.preExecutionGates?.status !== 'VERIFIED_EXCEPT_OAUTH' || approval.preExecutionGates?.client_sha256 !== selected.client_sha256) fail('SELECTED_CLIENT_OR_SINGLE_PROBE_GATE');
+  if ((phase === 'probe' ? approval.singleProbeOnly !== true : approval.singleProbeOnly !== false || !Array.isArray(approval.allowedPhases) || !approval.allowedPhases.includes(phase) || (phase === 'before' && approval.continueAfterValidatedProbe !== true) || approval.authorizer_sha256 !== sha(fs.readFileSync(__filename))) || approval.preExecutionGates?.status !== 'VERIFIED_EXCEPT_OAUTH' || approval.preExecutionGates?.client_sha256 !== selected.client_sha256) fail('SELECTED_CLIENT_OR_SINGLE_PROBE_GATE');
   const ledgerFile = path.join(dir, 'continuation-ledger.json'), startingLedger = JSON.parse(fs.readFileSync(ledgerFile));
-  integrity.verifyApproval(approval, plan, startingLedger, 'probe');
+  integrity.verifyApproval(approval, plan, startingLedger, phase);
   // Validate non-OAuth prerequisites before consent; actual granted scope is checked at exchange.
   integrity.verifyPreconditions({ ...approval, preExecutionGates: { ...approval.preExecutionGates, status: 'VERIFIED', granted_scope: SCOPE } });
-  if (fs.existsSync(integrity.probeFile(dir, approval)) || fs.existsSync(path.join(dir, 'external-stream-before-progress.json')) || fs.existsSync(path.join(dir, 'external-stream.lock'))) fail('EXISTING_PROBE_OR_LOCK_STOP');
+  if (fs.existsSync(path.join(dir, 'external-stream.lock')) || (phase !== 'after' && (fs.existsSync(integrity.probeFile(dir, approval)) || fs.existsSync(path.join(dir, 'external-stream-before-progress.json')))) || (phase === 'after' && fs.existsSync(path.join(dir, 'external-stream-after-progress.json')))) fail('EXISTING_PROBE_OR_LOCK_STOP');
+  if (phase === 'after') integrity.verifyBefore(JSON.parse(fs.readFileSync(path.join(dir, 'external-stream-before.json'))), JSON.parse(fs.readFileSync(path.join(dir, 'external-stream-before-progress.json'))), plan);
   verifyTokenBudget(credentialDir, approval);
-  const file = path.join(credentialDir, 'owner-probe-authorization' + suffix + '.json'), receipt = { status: 'WAITING_FOR_OWNER', probe_attempt: attempt, client_sha256: selected.client_sha256, project: PROJECT, requested_scope: SCOPE, token_posts_dispatched: 0, sheets_gets: 0, cloud_executions: 0 };
+  const file = path.join(credentialDir, 'owner-' + phase + '-authorization' + suffix + '.json'), receipt = { status: 'WAITING_FOR_OWNER', phase, probe_attempt: attempt, client_sha256: selected.client_sha256, project: PROJECT, requested_scope: SCOPE, token_posts_dispatched: 0, sheets_gets: 0, cloud_executions: 0 };
   save(file, receipt, true);
   try {
-    let grant = await authorize({ client: selected.client, ready: url => console.log('Open manually in ordinary Chrome: ' + url), beforeExchange: () => { verifyTokenBudget(credentialDir, approval); receipt.token_posts_dispatched = 1; receipt.status = 'TOKEN_EXCHANGE_DISPATCHED'; save(file, receipt); } });
+    let grant = await authorize({ client: selected.client, phase, ready: url => console.log('Open manually in ordinary Chrome: ' + url), beforeExchange: () => { verifyTokenBudget(credentialDir, approval); receipt.token_posts_dispatched = 1; receipt.status = 'TOKEN_EXCHANGE_DISPATCHED'; save(file, receipt); } });
     receipt.status = 'AUTHORIZED'; receipt.granted_scope = grant.scope; receipt.expires_at = grant.expires_at; receipt.refresh_token_discarded = grant.refresh_token_discarded; save(file, receipt);
     approval.preExecutionGates = { ...approval.preExecutionGates, status: 'VERIFIED', granted_scope: grant.scope };
-    save(path.join(credentialDir, 'authorized-single-probe-approval' + suffix + '.json'), approval, true);
-    const probe = await integrity.runProbe({ dir, books, approval, token: grant.token }); grant = null;
+    save(path.join(credentialDir, 'authorized-' + phase + '-approval' + suffix + '.json'), approval, true);
+    const result = await runApprovedScope({ dir, books, approval, token: grant.token }, phase); grant = null;
     const currentLedger = JSON.parse(fs.readFileSync(ledgerFile));
     receipt.sheets_gets = currentLedger.consumption.sheetsGets - startingLedger.consumption.sheetsGets;
-    if (receipt.sheets_gets !== 1) fail('ACCOUNTING_CHANGED_STOP');
-    currentLedger.status = 'STOPPED_SINGLE_EXTERNAL_PROBE_AWAITING_REVIEW'; save(ledgerFile, currentLedger);
-    receipt.status = 'PROBE_STOP_FOR_REVIEW'; save(file, receipt);
-    console.log(JSON.stringify({ status: probe.status, google_gets: 1, remaining_requests_run: 0, cloud_executions: 0, whole_phase_verified: false }));
+    if (receipt.sheets_gets !== (phase === 'probe' ? 1 : plan.onePhaseGets)) fail('ACCOUNTING_CHANGED_STOP');
+    currentLedger.status = phase === 'probe' ? 'STOPPED_SINGLE_EXTERNAL_PROBE_AWAITING_REVIEW' : phase.toUpperCase() + '_INTEGRITY_VERIFIED'; save(ledgerFile, currentLedger);
+    receipt.status = phase === 'probe' ? 'PROBE_STOP_FOR_REVIEW' : phase.toUpperCase() + '_VERIFIED'; save(file, receipt);
+    console.log(JSON.stringify({ status: receipt.status, google_gets: receipt.sheets_gets, phase, cloud_executions: 0, whole_phase_verified: result.ok === true }));
   } catch (e) {
     receipt.status = 'STOPPED'; receipt.error = redacted(e);
-    try { receipt.sheets_gets = JSON.parse(fs.readFileSync(ledgerFile)).consumption.sheetsGets - startingLedger.consumption.sheetsGets; } catch { receipt.sheets_gets = 'UNKNOWN_SEE_LEDGER'; }
+    try { const stopped = JSON.parse(fs.readFileSync(ledgerFile)); receipt.sheets_gets = stopped.consumption.sheetsGets - startingLedger.consumption.sheetsGets; stopped.status = 'STOPPED_EXTERNAL_' + receipt.error.replace(/^INTEGRITY_(?:OAUTH|EXTERNAL|STREAM)_/, ''); save(ledgerFile, stopped); } catch { receipt.sheets_gets = 'UNKNOWN_SEE_LEDGER'; }
     save(file, receipt); throw Error(receipt.error);
   }
 }
-module.exports = { SCOPE, PROJECT, MAX_TOKEN_RESPONSE, validateClient, validateAcl, pkce, authUrl, validateGrant, exchangeCode, authorize, verifyTokenBudget };
-if (require.main === module) main(process.argv[2], process.argv[3]).catch(e => { console.error(redacted(e)); process.exitCode = 1; });
+module.exports = { SCOPE, PROJECT, MAX_TOKEN_RESPONSE, validateClient, validateAcl, pkce, authUrl, validateGrant, exchangeCode, authorize, verifyTokenBudget, runApprovedScope };
+if (require.main === module) main(process.argv[2], process.argv[3], process.argv[4]).catch(e => { console.error(redacted(e)); process.exitCode = 1; });

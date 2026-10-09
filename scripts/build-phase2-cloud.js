@@ -71,7 +71,13 @@ function handoff(c,connection){
  names[9].parameters.filters.conditions.push(...['truthful','recipient_relevant','consent_reviewed','suppression_checked'].map(keyName=>({keyName,condition:'isTrue'})),...['reviewer','compliance_basis','compliance_status'].map(keyName=>({keyName,condition:'eq',keyValue:'={{ $json.cas.'+keyName+' }}'})));
  names[10].output=[{request:{arguments:{mode:'draft',mailFormat:'html'}},draft_key:'fixture',message_hash:'fixture',claimed_at:'2026-10-06T00:00:00Z'}];
  names[12].output=[Object.fromEntries(Object.entries(require('./phase2-cloud-queue').COLUMNS).map(([k,t])=>[k,t==='boolean'?false:t==='number'?0:'fixture']))];
+ guardProviderPersistence({nodes:names});
  return linear('Arc | Phase 2 | Approved Zoho handoff',names,[{name:'Cloud approval intake',indices:[1,2,3,4,5,6,7],description:'Read current source protection and approvals. Select at most one email.'},{name:'Approved unsent provider draft',indices:[8,9,10,11,12,13,14],description:'Reserve the exact approved content, CREATE_DRAFT only, store receipt. Never set SENT.'}]);
+}
+function guardProviderPersistence(w){
+ w.nodes.find(n=>n.name==='Persist provider result').alwaysOutputData=true;
+ w.nodes.find(n=>n.name==='Unsent Zoho result').parameters.jsCode=bundle('phase2-cloud-review')+'return [{json:arc.persistedReceipt($("Record unsent provider receipt").first().json,$input.all().map(i=>i.json))}];';
+ return ['Persist provider result','Unsent Zoho result'];
 }
 function integrity(c,index=0){
  const registry=JSON.parse(fs.readFileSync(path.join(__dirname,'../config/datasets.json'),'utf8')).datasets;
@@ -88,5 +94,5 @@ function migration(c,sourceById){
  table('Annotate existing review item',c.queue_table,'update',{matchType:'allConditions',filters:{conditions:[{keyName:'queue_key',condition:'eq',keyValue:'={{ $json.queue_key }}'},{keyName:'payload',condition:'eq',keyValue:'={{ $json.previous_payload }}'}]},columns:{mappingMode:'defineBelow',value:{payload:'={{ $json.payload }}'},schema:[{id:'payload',displayName:'payload',type:'string',required:false,display:true}]}})
  ]);
 }
-module.exports={SETTINGS,GOOGLE,code,manual,read,linear,datasets,researchRequests,inspector,save,table,columns,intake,queue,reviewer,handoff,integrity,migration};
+module.exports={SETTINGS,GOOGLE,code,manual,read,linear,datasets,researchRequests,inspector,save,table,columns,intake,queue,reviewer,handoff,guardProviderPersistence,integrity,migration};
 if(require.main===module){const c=JSON.parse(fs.readFileSync(process.argv[2]||'private/phase2/cloud/config.json','utf8'));const reviews=c.mode==='PRODUCTION'?{...c,cap:'ALL'}:c;save(queue(c),'draft-queue');save(reviewer(reviews),'review-actions');const connection=JSON.parse(fs.readFileSync('private/phase2/composio/connection.json','utf8'));save(handoff(reviews,connection),'approved-zoho');console.log('Generated Cloud Phase 2 workflows. No network requests or queue mutations.');}

@@ -26,7 +26,7 @@ test('stream parser rejects truncation, duplicate keys, invalid UTF8, grammar an
 test('fixed manifest specifies exact paired GETs, individual sheets, metadata guards and no Cloud calls', () => {
   const realShape = [7, 9, 6].map((count, i) => ({ ...books[i], reference_sheets: Array.from({ length: count - 2 }, (_, j) => 'Synthetic reference ' + j) })), p = v.manifest(realShape);
   assert.equal(p.onePhaseGets, 28); assert.equal(p.pairedGets, 56); assert.equal(p.cloudExecutions, 0); assert.equal(p.schema_columns, 208);
-  for (const d of p.datasets) for (const r of d.requests) { const url = new URL(r.url); assert.equal(url.origin, 'https://sheets.googleapis.com'); assert.equal(url.searchParams.getAll('ranges').length, r.role === 'grid' ? 1 : 0); if (r.role === 'grid') assert.equal(url.searchParams.get('fields'), 'spreadsheetId,sheets(properties,data)'); else { assert.ok(!url.searchParams.get('fields').includes('rowData')); assert.equal(url.searchParams.get('commentsViewMode'), 'COMMENTS_VIEW_MODE_INCLUDED'); assert.ok(url.searchParams.get('fields').includes('commentAnchors')); } }
+  for (const d of p.datasets) for (const r of d.requests) { const url = new URL(r.url); assert.equal(url.origin, 'https://sheets.googleapis.com'); assert.equal(url.searchParams.get('prettyPrint'),'false'); assert.equal(url.searchParams.getAll('ranges').length, r.role === 'grid' ? 1 : 0); if (r.role === 'grid') assert.equal(url.searchParams.get('fields'), 'spreadsheetId,sheets(properties,data)'); else { assert.ok(!url.searchParams.get('fields').includes('rowData')); assert.equal(url.searchParams.get('commentsViewMode'), 'COMMENTS_VIEW_MODE_INCLUDED'); assert.ok(url.searchParams.get('fields').includes('commentAnchors')); } }
   assert.equal(v.manifest(realShape).sha256, p.sha256); assert.throws(() => v.apiUrl({ ...books[0], spreadsheet_id: 'evil/id' }), /BOOK_ID/);
 });
 test('metadata requires all tabs, unique IDs, bounded entire grids and 208 research columns', () => {
@@ -81,6 +81,40 @@ test('metadata byte cap and partial or duplicate JSON never certify metadata', (
   const c = v.metadataConsumer(books[0]); assert.throws(() => c.write(Buffer.alloc(v.META_BYTES + 1)), /METADATA_LIMIT/);
   const partial = v.metadataConsumer(books[0]); partial.write(Buffer.from('{"spreadsheetId":')); assert.throws(() => partial.finish(), /TRUNCATED/);
 });
+
+test('native synchronous aborted events preserve the initiating limit or parser error and safe metrics', async () => {
+  const { IncomingMessage } = require('node:http'), { Socket } = require('node:net');
+  for (const kind of ['body', 'parser', 'remote_abort']) {
+    let calls = 0, finished = false;
+    const get = (url, options, callback) => {
+      calls++; const req = new EventEmitter(); req.destroy = () => {};
+      queueMicrotask(() => {
+        const response = new IncomingMessage(new Socket()); response.statusCode = 200; response.headers = { 'content-type':'application/json' };
+        callback(response);
+        if (kind === 'remote_abort') response.destroy(); else response.emit('data', Buffer.alloc(65,32));
+      }); return req;
+    };
+    const consumer = { write() { if (kind === 'parser') throw Error('INTEGRITY_STREAM_SYNTHETIC_STOP'); }, finish() { finished = true; } };
+    await assert.rejects(v.request(v.apiUrl(books[0]), 'synthetic-token-never-log', consumer, kind === 'body' ? 64 : 128, get), error => {
+      assert.equal(error.message, kind === 'body' ? 'INTEGRITY_EXTERNAL_BODY_LIMIT' : kind === 'parser' ? 'INTEGRITY_STREAM_SYNTHETIC_STOP' : 'INTEGRITY_EXTERNAL_TRUNCATED');
+      assert.equal(error.transport.bytes, kind === 'remote_abort' ? 0 : 65); assert.equal(error.transport.complete,false);
+      assert.ok(!JSON.stringify(error.transport).includes('synthetic-token')); return true;
+    }); assert.equal(calls,1); assert.equal(finished,false);
+  }
+});
+
+test('stopped phases persist bounded failure metrics without exporting body or authorizing continuation', async () => {
+  const dir = temporary(), plan = v.manifest(books), f = simulatedFetch();
+  try {
+    const a = await reviewedProbe(dir,plan,f);
+    const fetch = async () => { const e = Error('INTEGRITY_EXTERNAL_BODY_LIMIT'); e.transport = {bytes:67108865,chunks:4097,elapsed_ms:5000,peak_heap_bytes:20000000,peak_rss_bytes:80000000,status:200,complete:false}; throw e; };
+    await assert.rejects(v.runPhase({dir,phase:'before',books,approval:a,token:'synthetic-token',fetch,pause:async()=>{}}),/BODY_LIMIT/);
+    const progress = JSON.parse(fs.readFileSync(path.join(dir,'external-stream-before-progress.json')));
+    assert.equal(progress.status,'STOPPED'); assert.equal(progress.requests[0].failure_transport.bytes,67108865);
+    assert.equal(fs.existsSync(path.join(dir,'external-stream-before.json')),false);
+    assert.ok(!JSON.stringify(progress).includes('synthetic-token')); assert.ok(!JSON.stringify(progress).includes('SYNTHETIC observation'));
+  } finally {cleanup(dir);}
+});
 function approval(plan) { return { status: 'OWNER_APPROVED', ownerApprovedAt: '2026-10-09T00:00:00Z', manifest_sha256: plan.sha256, credential_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', maxGoogleGets: plan.pairedGets, maxCloudExecutions: 0, preExecutionGates: { status: 'VERIFIED', checked_at: new Date().toISOString(), client_sha256: 'a'.repeat(64), granted_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', storage_verified: true, costs_verified: 'NO_ADDITIONAL_CHARGES', source_writers_paused: true, quota_reads_per_user_minute: 60, quota_reads_per_project_minute: 300 } }; }
 test('single probe uses only one existing GET allowance; complete BEFORE still requires full paired capacity', () => {
   const plan = v.manifest(books), a = approval(plan), ledger = { consumption: { sheetsGets: 6 }, caps: { sheetsGets: 7 } };
@@ -112,6 +146,28 @@ test('explicit new probe attempt preserves the failed original and is used by co
   } finally { cleanup(dir); }
 });
 async function reviewedProbe(dir, plan, f) { const a = approval(plan), probe = await v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch }); a.liveProbeReviewedSha256 = semanticHash(probe); return a; }
+
+test('explicit phase approval reuses one valid probe and covers both complete phases with no extra GET', async () => {
+  const oauth = require('../scripts/authorize-integrity-google'), dir = temporary(), plan = v.manifest(books), f = simulatedFetch(), a = { ...approval(plan), singleProbeOnly:false, allowedPhases:['before','after'],continueAfterValidatedProbe:true,probeAttempt:'3'.repeat(32) };
+  try {
+    const opts = {dir,books,approval:a,token:'synthetic-token',fetch:f.fetch,pause:async()=>{}};
+    const before = await oauth.runApprovedScope(opts,'before'); assert.equal(before.ok,true); assert.equal(before.books.length,3); assert.equal(f.calls,plan.onePhaseGets);
+    const after = await oauth.runApprovedScope(opts,'after'); assert.equal(after.ok,true); assert.equal(f.calls,plan.pairedGets); assert.deepEqual(after.books.map(b=>b.sha256),before.books.map(b=>b.sha256));
+    await assert.rejects(oauth.runApprovedScope(opts,'before'),/EXISTING_ATTEMPT/); assert.equal(f.calls,plan.pairedGets);
+  } finally { cleanup(dir); }
+});
+
+test('phase continuation requires explicit permission, paired capacity and a valid first probe', async () => {
+  const oauth = require('../scripts/authorize-integrity-google');
+  for (const kind of ['unapproved','string_phase','no_continuation','budget','failed_probe']) {
+    const dir=temporary(),plan=v.manifest(books),f=simulatedFetch({failureAt:kind==='failed_probe'?1:0}),a={...approval(plan),singleProbeOnly:false,allowedPhases:['before','after'],continueAfterValidatedProbe:true,probeAttempt:'4'.repeat(32)};
+    try {
+      if(kind==='unapproved')a.singleProbeOnly=true;if(kind==='string_phase')a.allowedPhases='before';if(kind==='no_continuation')a.continueAfterValidatedProbe=false;if(kind==='budget')fs.writeFileSync(path.join(dir,'continuation-ledger.json'),JSON.stringify({caps:{sheetsGets:7},consumption:{sheetsGets:6}}));
+      await assert.rejects(oauth.runApprovedScope({dir,books,approval:a,token:'synthetic-token',fetch:f.fetch,pause:async()=>{}},'before'),/PHASE_APPROVAL|CONTINUATION_APPROVAL|REQUEST_BUDGET|HTTP_401/);
+      assert.equal(f.calls,kind==='failed_probe'?1:0);assert.equal(fs.existsSync(path.join(dir,'external-stream-before.json')),false);
+    } finally { cleanup(dir); }
+  }
+});
 test('before/after receipts certify all three complete books, preserve accounting and retain no cell contents', async () => {
   const dir = temporary(), plan = v.manifest(books), f = simulatedFetch();
   try { const a = await reviewedProbe(dir, plan, f), before = await v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }); assert.equal(before.google_gets, 12); assert.equal(before.books.length, 3); assert.ok(!JSON.stringify(before).includes('SYNTHETIC observation')); const after = await v.runPhase({ dir, phase: 'after', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }); assert.equal(after.ok, true); const ledger = JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))); assert.deepEqual(ledger.consumption, { sheetsGets: 30, executions: 43, rowMutations: 134 }); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /EXISTING_ATTEMPT/); assert.equal(f.calls, 24); }
@@ -141,6 +197,20 @@ test('streaming transport processes a real 208-column fixture above 8 MiB withou
   const result = await v.request(v.apiUrl(demo.book, 'Arc Research'), 'synthetic-token', v.gridConsumer(null, demo.book, 'Arc Research'), v.GRID_BYTES, get);
   assert.ok(wireBytes > 8 * 1024 * 1024); assert.equal(result.body_bytes, wireBytes); assert.equal(result.complete_grid, true); assert.equal(result.required_research_columns, 208);
   assert.equal(result.transport.bytes, wireBytes); assert.ok(result.transport.chunks > 1); assert.equal(result.transport.complete, true);
+});
+
+test('compact serialization removes only whitespace and preserves a complete dense 208-column grid hash', () => {
+  const demo = require('../scripts/demo-streaming-integrity');
+  const compact = v.gridConsumer(null,demo.book,'Arc Research'), pretty = v.gridConsumer(null,demo.book,'Arc Research'); let compactBytes=0,prettyBytes=0;
+  for (const chunk of demo.stream(400)) {
+    const text = chunk.toString(), comma = text.startsWith(',') ? ',' : '';
+    const formatted = text.startsWith('{"values"') || text.startsWith(',{"values"') ? Buffer.from(comma+JSON.stringify(JSON.parse(text.slice(comma.length)),null,2).replace(/\n/g,'\n            ')) : chunk;
+    compactBytes+=chunk.length;prettyBytes+=formatted.length;
+    for(let i=0;i<chunk.length;i+=16384)compact.write(chunk.subarray(i,i+16384));
+    for(let i=0;i<formatted.length;i+=16384)pretty.write(formatted.subarray(i,i+16384));
+  }
+  const a=compact.finish(),b=pretty.finish(); assert.equal(a.sha256,b.sha256); assert.equal(a.required_research_columns,208); assert.equal(b.complete_grid,true);
+  assert.ok(compactBytes<v.GRID_BYTES);assert.ok(prettyBytes>v.GRID_BYTES);assert.equal(a.body_bytes,compactBytes);assert.equal(b.body_bytes,prettyBytes);
 });
 
 test('one bounded probe stops for review, is counted once and fits the exact paired budget', async () => {

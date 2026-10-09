@@ -1,5 +1,10 @@
 # Readiness continuation, 9 October 2026
 
+**Current status:** complete compact BEFORE and critical synthetic Cloud tests
+passed after two narrow fixes; final AFTER is pending. The stops below remain
+historical. See the [consolidated report](stage1-critical-validation-20261009.md)
+and [candidate release manifest](release-candidate-20261009.md).
+
 **Release blocked. No production publication or deployment occurred.**
 The application candidate is unchanged. The owner approved the corrected
 256-column OAuth integrity recovery. Its first native GET succeeded, but the

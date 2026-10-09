@@ -67,7 +67,7 @@ function patch(c,original,kind){
   bridge(w,c,'Validate review actions','Emit reviewed updates','Save review actions','Review action result');
   const intake=w.nodeGroups.find(g=>g.name==='Cloud intake');intake.nodeNames.push(...extra.map(n=>n.name));
  }else if(kind==='draft')bridge(w,c,'Plan truthful drafts and exclusions','Emit queue upserts','Upsert review queue','Queue result');
- else if(kind==='zoho'){w.nodes.push(callSync(c));edge(w,'Unsent Zoho result','Refresh Outreach Inbox');}
+ else if(kind==='zoho'){base.guardProviderPersistence(w);w.nodes.push(callSync(c));edge(w,'Unsent Zoho result','Refresh Outreach Inbox');}
  const order=(original.workflow||original).nodes.map(n=>n.name);
  if(kind==='review')order.splice(order.indexOf('Prepare Arc Research reads'),0,'Read Outreach Inbox actions','Operator Inbox context','Read Inbox action links','Operator link context');
  if(kind!=='zoho')order.splice(order.indexOf(kind==='review'?'Save review actions':'Upsert review queue'),0,kind==='review'?'Review updates needed?':'Queue updates needed?');

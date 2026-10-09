@@ -30,7 +30,7 @@ function plan(research,queue,locks,options,now=new Date().toISOString(),inbox=[]
   if(q.blocked(d,idx)||['DO_NOT_EMAIL','DO_NOT_CONTACT'].includes(d.compliance_status)){summary.protected++;continue;}
   const rk=q.reservationKey(d);if(reserved.has(rk)||existing.some(x=>x.d.lead_id!==d.lead_id&&q.reservationKey(x.d)===rk)){summary.protected++;continue;}
   if(jobs.length>=c.cap)continue;
-  if(prior){d.created_at=prior.d.created_at;d.draft_key=prior.d.draft_key;d.lead_step_key=prior.d.lead_step_key;d.recipient_key=prior.d.recipient_key;const leaks=copy.leakage(prior.d.subject,prior.d.draft_body,copy.list(prior.d.evidence_summary));if(leaks.some(x=>/LEAK|EXCERPT/.test(x)))summary.raw_leakage++;if(/##|\*\*|opening hours|\|[^\n]*\||out of 5/i.test(copy.core(prior.d.draft_body)))summary.evidence_dump_leakage++;}
+  if(prior){d.created_at=prior.d.created_at;d.lead_step_key=prior.d.lead_step_key;if(prior.d.channel==='NO_ROUTE'){d.cloud_previous_placeholder_key=prior.d.draft_key;}else{d.draft_key=prior.d.draft_key;d.recipient_key=prior.d.recipient_key;}const leaks=copy.leakage(prior.d.subject,prior.d.draft_body,copy.list(prior.d.evidence_summary));if(leaks.some(x=>/LEAK|EXCERPT/.test(x)))summary.raw_leakage++;if(/##|\*\*|opening hours|\|[^\n]*\||out of 5/i.test(copy.core(prior.d.draft_body)))summary.evidence_dump_leakage++;}
   d.subject='';d.draft_body='';d.message_hash='';d.draft_status='NEEDS_RESEARCH';d.routing='NEEDS_MANUAL_RESEARCH';d.cloud_source_snapshot_hash=q.sourceHash(source);
   d.copy_history=prior?retainCopy(prior.d):[];d.research_diagnostics=diagnostics;
   d.copy_status='PENDING';d.copy_version=copy.VERSION;d.copy_model=copy.MODEL;d.copy_attempts=0;

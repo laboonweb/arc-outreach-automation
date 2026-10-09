@@ -1,66 +1,28 @@
 # Arc Outreach Automation
 
-**Current development checkpoint, 9 October 2026: signed-off local Stage 0
-implementation with bounded Stage 1 corrections. Cloud validation is incomplete;
-this revision is not production validated.** Editor authentication was stable at
-the last Cloud check.
-The owner approved the corrected 256-column integrity recovery. Its first Google
-GET succeeded, but the actual Cloud validator rejected a response exceeding the
-approved 8 MiB body limit. It returned the redacted failure
-`INTEGRITY_NATIVE_BODY_LIMIT`; no usable BEFORE receipt was produced. Cloud
-testing stopped without retry. The isolated control was restored exactly, and
-fresh production and synthetic preservation checks passed. The unchanged local
-candidate has been rebuilt with all six hashes unchanged. Latest full local suite:
-465 passed, zero failed/skipped, including 28 external streaming integrity tests,
-12 local OAuth/PKCE tests and five receipt-persistence regressions.
-Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 8/14 integrity
-GET slots (seven actual requests plus one retained pre-dispatch reservation).
-Complete paired source integrity remains blocked. The external, read-only
-streaming verifier has been demonstrated locally on the 208-column schema and
-32-66 MB synthetic responses, with less than 23 MB peak heap. Its 56 new GETs and
-separate read-only OAuth connection are conditionally approved subject to verified
-client, scope, storage, quota, costs and a single live probe. The dedicated Google
-project and Sheets API are prepared; actual quotas are verified and the owner
-confirmed no linked billing account. After Google rejected automated Chrome,
-the owner configured a Desktop client in ordinary Chrome with only the Sheets
-read-only scope. The downloaded replacement credential has an owner-restricted
-ACL; the screenshot-exposed older secret was disabled by the owner. The tested
-[local PKCE helper](docs/integrity-google-oauth.md) requires manual consent,
-validates the actual granted scope and invokes only one bounded probe. Ordinary
-Chrome authorization succeeded: one token POST granted exactly Sheets read-only.
-The probe stopped with `INTEGRITY_EXTERNAL_PERSISTENCE_STOP` while replacing its
-counted pre-dispatch receipt, before calling the Google fetch. That attempt
-received no live workbook response. The reservation remains counted and all
-failed files are preserved. The original OS
-error was redacted. A separate local reproduction captured an EPERM replacement
-failure in the same private folder. The shared receipt writer now flushes and
-verifies bytes, retries only a bounded local sharing refusal, and stops on
-conflicts or ambiguous persistence. All 80 native writes passed in the normal
-and owner-restricted folders, recovering five temporary sharing refusals.
-The process responsible for those refusals remains unidentified.
-The owner resumed and approved fresh ordinary-Chrome consent. One token POST and
-one Sheets GET ran under existing caps. OAuth and durable persistence passed;
-the probe stopped with `INTEGRITY_EXTERNAL_RESEARCH_HEADERS_INCOMPLETE` at its
-strict header-order check. No usable probe, complete BEFORE or AFTER exists.
-The remaining 55 reads and all Cloud executions stayed stopped.
+**Development checkpoint, 9 October 2026: all remaining critical synthetic Cloud
+tests passed after two narrow bug fixes. Stage 1 awaits the final complete AFTER
+integrity comparison; this revision is not production validated.**
 
-Saved October 7 header receipts show all 208 required fields and an intact
-113-field machine prefix, with preserved reviewer order and 13 extra columns in
-two books. The verifier now accepts those existing layouts while rejecting
-missing/duplicate fields and reordered machine columns; it hashes every allocated
-column. All three saved layouts pass synthetic grid replay. This is local
-compatibility evidence, not a fresh live certification. No Google repeat ran
-after that fix. Live size/time/memory metrics were not retained on the failure.
+The complete BEFORE check passed: three workbooks, 22 tabs, complete physical
+grids and all 208 research fields. Native five-engine integration, duplicate
+decisions, actual Data Table payload persistence, CAS failure recovery and
+ambiguous mocked provider results passed. Earlier successful panel scenarios
+were retained. The full local suite passed **472 tests, zero failures/skips**.
+All six production workflow graphs/settings/versions and all 81 production table
+rows remain unchanged. The four existing staging graphs are restored, inactive
+and unpublished; protected synthetic history remains intact.
 
-Stage 2 and publication remain on hold. Active GET cap stays 14; conditional cap
-62 is unchanged. A fresh 56-read pair would now total 64 counted slots and needs
-owner approval. Two token exchanges have been consumed; another probe requires
-one more, and separate BEFORE/AFTER consents would mean five total. Neither
-budget increase nor another live request is authorized. No Cloud, source or
-provider write occurred during this gate.
+Consumption: **71/84 Cloud executions, 154/500 synthetic mutations, 39/67 counted
+Google GET slots and 4/5 OAuth token POSTs**. Exactly 28 AFTER reads and one manual
+owner consent remain. Credentials are restricted to the owner; tokens stay in
+memory. No production/source/provider writes, sends, paid calls or deployment
+occurred. Stage 2's real unsent owner-mailbox Zoho proof and production publication
+still require separate approval.
 
-See the [compact remaining execution plan](docs/integrity-streaming-stage1-plan.md)
-and [preserved Cloud readiness evidence](docs/readiness-20261009.md).
+See the [consolidated critical validation report](docs/stage1-critical-validation-20261009.md),
+[candidate release manifest](docs/release-candidate-20261009.md) and
+[integrity execution plan](docs/integrity-streaming-stage1-plan.md).
 
 See [version control and release procedure](docs/version-control.md) and
 [Git to n8n mapping](docs/n8n-version-map.md). Git pushes do not deploy n8n.

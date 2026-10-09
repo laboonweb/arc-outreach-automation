@@ -1,5 +1,12 @@
 # Owner-operated Google authorization
 
+Current Stage 1 status: the approved compact BEFORE completed all 28 reads
+with exact Sheets read-only authorization. Cumulative use is 39/67 counted GETs
+and four/five token POSTs. Final AFTER requires the existing client, fresh
+prerequisites and one separate ordinary-browser consent for exactly 28 reads.
+Earlier single-probe instructions and smaller ceilings below describe prior
+stopped gates. See the [current report](stage1-critical-validation-20261009.md).
+
 Use the owner's ordinary Chrome, without a browser connector or automated sign-in.
 The existing `arc-integrity-stage-1` project has the Sheets API enabled. Keep
 Google Auth Platform External/Testing, with only the owner as a test user and
@@ -45,13 +52,25 @@ process command, disk receipt, console or chat. Native app client secrets are
 not a substitute for PKCE or owner consent. The grant itself covers Sheets
 accessible to the account; the integrity runner pins the three approved book IDs.
 
-After a valid grant, the helper invokes only `runProbe`, once, directly in the
-same process. It never invokes BEFORE, AFTER, n8n or a provider. The first book's
+The default live mode invokes only `runProbe`, once, directly in the
+same process. The first book's
 complete allocated Arc Research grid and all 208 headers must pass the existing
 64 MiB streaming, 60-second, 64 MiB heap and 192 MiB RSS bounds. No research cell
 contents are exported. A valid probe produces AWAITING_REVIEW and exits; it is
 not a complete workbook or BEFORE integrity certification. All remaining 55
-GETs and Cloud executions require the next gate.
+GETs and Cloud executions require the next gate. It never invokes n8n or a provider.
+
+The optional `--authorize-phase <attempt> before` requires an explicit private
+approval for phase execution and conditional continuation after a valid probe.
+It checks capacity for the entire 56-read pair before consent, then uses one
+in-memory grant for the first bounded probe and the other 27 BEFORE reads. The
+probe must pass every transport, memory, association and 208-field completeness
+check; its exact digest is pinned before continuation. Any failure stops the
+phase. A complete BEFORE receipt is required before synthetic Cloud testing.
+`--authorize-phase <attempt> after` uses a fresh manual consent for exactly 28
+AFTER reads and compares every workbook hash. Both commands stop after their
+phase and refuse a prior attempt. Neither saves tokens or raises resource caps.
+The private approval pins the authorizer hash and lists permitted phases.
 
 Private receipts record only client/manifest digests, exact scope, expiry,
 attempt counts, redacted statuses and the existing compact grid integrity
@@ -78,8 +97,8 @@ An explicitly approved new probe attempt uses a 32-character hex attempt ID and
 separate approval, probe and authorization receipts. Original failed receipts
 and budget history remain untouched. Reusing that attempt is refused. The
 helper counts all preserved OAuth token POST receipts and enforces the approval's
-budget, with a maximum of four. Default remains two; no budget is increased by
-source code alone. The flow still invokes only one Google probe and stops.
+budget, with a prepared maximum of five. Default remains two; no budget is increased by
+source code alone. Default single-probe mode still stops after one Google GET.
 
 The corrected persistence attempt ran once after renewed ordinary-Chrome
 consent. Its one token POST and one Sheets GET fit existing budgets. Exact scope
@@ -92,16 +111,29 @@ Saved header receipts prove the verifier rejected existing reviewer layouts
 that contain all 208 fields. The local correction preserves the 113-field
 machine prefix, requires every field exactly once and hashes extra columns.
 Three saved layouts pass synthetic replay; another live certification is still
-needed. A new probe requires one additional token exchange. A fresh complete
-pair would total 64 counted GET slots; separate probe/BEFORE/AFTER consents would
-mean five total token POSTs. Those changed budgets require owner approval; the
-helper currently refuses a token ceiling above four. Do not run another probe,
-raise that guard, or begin phase authorization without the next approved scope.
+needed. A fresh complete pair would total 64 counted GET slots. Combining the
+probe with BEFORE under one explicit conditional approval needs two further
+token POSTs, four cumulative. That four-token continuation was approved;
+the default of two remains exhausted. The 64-GET ceiling, four-POST allowance
+and conditional continuation were approved before the attempt below.
+
+The approved combined attempt passed exact OAuth scope, durable persistence,
+the complete 49.8 MB research-grid probe and one metadata read. Its next source
+read stopped as TRUNCATED; no remaining request or Cloud execution ran. Usage is
+11/64 counted GET slots and three/four token POSTs. Native local tests prove the
+old destruction order can mask an initiating size/parser error; the corrected
+transport settles failure first and retains numeric failure metrics. Its actual
+live cause remains unconfirmed. Compact JSON requests preserve every field and
+hash without raising any response/memory/time limit. A fresh complete pair needs
+67 cumulative GET slots and five token POSTs; neither extension nor another
+attempt is authorized yet. The prepared maximum of five still requires an
+explicit private allowance, and the default remains two.
 
 Local regressions use synthetic client/grant data and localhost only. They cover
 client and ACL refusal, PKCE and exact scope, token transport bounds, owner
 denial, state/replay checks, listener expiry, credential-free browser output and
-single-probe budget separation. Application candidates and Cloud graphs are
+single-probe budget separation, complete paired execution and refusal of absent
+phase/continuation approval or insufficient paired capacity. Application candidates and Cloud graphs are
 unchanged. Live authorization and probe results are reported separately.
 
 References: [Google desktop OAuth](https://developers.google.com/identity/protocols/oauth2/native-app),

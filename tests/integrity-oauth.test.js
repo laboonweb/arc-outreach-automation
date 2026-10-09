@@ -82,15 +82,19 @@ test('wrong state, duplicate state/code and owner denial all stop without token 
 test('local authorization deadline stops without exchange or automatic browser opening', async () => {
   let calls = 0; await assert.rejects(oauth.authorize({ client: client().installed, ready: () => {}, timeoutMs: 20, exchange: async () => { calls++; } }), /OWNER_TIMEOUT_STOP/); assert.equal(calls, 0);
 });
-test('default CLI is offline and live path exposes only the single-probe runner', () => {
+test('default CLI is offline and single-probe mode stays the default live scope', () => {
   const output = JSON.parse(execFileSync(process.execPath, ['scripts/authorize-integrity-google.js'], { encoding: 'utf8' })); assert.equal(output.live_calls, 0); assert.equal(output.scope, oauth.SCOPE);
-  const source = fs.readFileSync('scripts/authorize-integrity-google.js', 'utf8'); assert.ok(source.includes('integrity.runProbe')); assert.ok(!source.includes('integrity.runPhase')); assert.ok(!source.includes('ARC_INTEGRITY_ACCESS_TOKEN')); assert.ok(!source.includes('launch(')); assert.ok(source.includes("'owner-probe-authorization' + suffix"));
+  const source = fs.readFileSync('scripts/authorize-integrity-google.js', 'utf8'); assert.ok(source.includes("requestedPhase : 'probe'")); assert.ok(!source.includes('ARC_INTEGRITY_ACCESS_TOKEN')); assert.ok(!source.includes('launch(')); assert.ok(source.includes("'owner-' + phase + '-authorization'"));
 });
 test('OAuth budget counts all preserved attempt receipts and rejects unexpected counts', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arc-integrity-oauth-synthetic-'));
   try {
     fs.writeFileSync(path.join(dir, 'owner-probe-authorization.json'), JSON.stringify({ token_posts_dispatched: 1 })); assert.equal(oauth.verifyTokenBudget(dir, {}), 1);
-    const second = path.join(dir, 'owner-probe-authorization-' + '1'.repeat(32) + '.json'); fs.writeFileSync(second, JSON.stringify({ token_posts_dispatched: 1 })); assert.throws(() => oauth.verifyTokenBudget(dir, {}), /TOKEN_POST_BUDGET/); assert.equal(oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), 2); assert.throws(() => oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 5 }), /TOKEN_POST_BUDGET/);
+    const second = path.join(dir, 'owner-probe-authorization-' + '1'.repeat(32) + '.json'); fs.writeFileSync(second, JSON.stringify({ token_posts_dispatched: 1 })); assert.throws(() => oauth.verifyTokenBudget(dir, {}), /TOKEN_POST_BUDGET/); assert.equal(oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), 2); assert.throws(() => oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 6 }), /TOKEN_POST_BUDGET/);
+    fs.writeFileSync(path.join(dir, 'owner-before-authorization-' + '2'.repeat(32) + '.json'), JSON.stringify({ token_posts_dispatched: 1 })); assert.equal(oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), 3);
+    fs.writeFileSync(path.join(dir, 'owner-after-authorization-' + '2'.repeat(32) + '.json'), JSON.stringify({ token_posts_dispatched: 1 })); assert.throws(() => oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), /TOKEN_POST_BUDGET/);
+    assert.equal(oauth.verifyTokenBudget(dir, {maxOAuthTokenPosts:5}),4);
+    fs.writeFileSync(path.join(dir, 'owner-before-authorization-' + '3'.repeat(32) + '.json'),JSON.stringify({token_posts_dispatched:1})); assert.throws(()=>oauth.verifyTokenBudget(dir,{maxOAuthTokenPosts:5}),/TOKEN_POST_BUDGET/);
     fs.writeFileSync(second, JSON.stringify({ token_posts_dispatched: 'UNKNOWN' })); assert.throws(() => oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), /TOKEN_POST_ACCOUNTING/);
   } finally { if (path.dirname(path.resolve(dir)) !== path.resolve(os.tmpdir()) || !path.basename(dir).startsWith('arc-integrity-oauth-synthetic-')) throw Error('UNSAFE_CLEANUP'); fs.rmSync(dir, { recursive: true }); }
 });

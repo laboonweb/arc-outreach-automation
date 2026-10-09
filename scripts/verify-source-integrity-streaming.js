@@ -17,6 +17,7 @@ const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 function apiUrl(book, sheet) {
   if (!/^[A-Za-z0-9_-]{5,100}$/.test(book.spreadsheet_id)) fail('BOOK_ID');
   const u = new URL('https://sheets.googleapis.com/v4/spreadsheets/' + book.spreadsheet_id);
+  u.searchParams.set('prettyPrint', 'false');
   u.searchParams.set('fields', sheet === undefined ? META_FIELDS : GRID_FIELDS);
   if (sheet === undefined) u.searchParams.set('commentsViewMode', 'COMMENTS_VIEW_MODE_INCLUDED');
   if (sheet !== undefined) { if (!titles(book).includes(sheet)) fail('UNREGISTERED_SHEET'); u.searchParams.append('ranges', "'" + sheet.replace(/'/g, "''") + "'!" + RANGE); }
@@ -100,25 +101,33 @@ async function request(url, token, consumer, maxBytes, get = https.get) {
   if (target.origin !== 'https://sheets.googleapis.com' || target.username || target.password || target.hash || !/^\/v4\/spreadsheets\/[A-Za-z0-9_-]+$/.test(target.pathname)) fail('HOST_ALLOWLIST');
   if (typeof token !== 'string' || !token || /[\r\n]/.test(token)) fail('CREDENTIAL_REQUIRED');
   return new Promise((resolve, reject) => {
-    let done = false, timer; const started = Date.now();
-    const stop = code => { if (done) return; done = true; clearTimeout(timer); req.destroy(); reject(Error('INTEGRITY_EXTERNAL_' + code)); };
+    let done = false, timer, responseRef, status = null, expectedBytes, bytes = 0, chunks = 0, peakHeap = 0, peakRss = 0; const started = Date.now();
+    const rejectFailure = error => {
+      if (done) return; done = true; clearTimeout(timer);
+      const safe = Error(errorCode(error));
+      safe.transport = { bytes, chunks, elapsed_ms: Date.now() - started, peak_heap_bytes: peakHeap, peak_rss_bytes: peakRss, status, expected_bytes: expectedBytes, complete: false };
+      // Destroy emits aborted synchronously; preserve the initiating error first.
+      req.destroy(); responseRef?.destroy(); reject(safe);
+    };
+    const stop = code => rejectFailure(Error('INTEGRITY_EXTERNAL_' + code));
     const req = get(target, { method: 'GET', rejectUnauthorized: true, highWaterMark: 16384, headers: { Authorization: 'Bearer ' + token, 'Accept-Encoding': 'identity', Accept: 'application/json' } }, response => {
-      if (response.statusCode !== 200) { response.destroy(); stop('HTTP_' + response.statusCode + '_STOP'); return; }
-      if (!/^application\/json(?:;|$)/i.test(response.headers['content-type'] || '') || !['', 'identity'].includes(response.headers['content-encoding'] || '')) { response.destroy(); stop('CONTENT_ENCODING'); return; }
+      responseRef = response; status = response.statusCode;
+      if (response.statusCode !== 200) { stop('HTTP_' + response.statusCode + '_STOP'); return; }
+      if (!/^application\/json(?:;|$)/i.test(response.headers['content-type'] || '') || !['', 'identity'].includes(response.headers['content-encoding'] || '')) { stop('CONTENT_ENCODING'); return; }
       const length = response.headers['content-length'];
-      if (length !== undefined && (!/^\d+$/.test(String(length)) || Number(length) > maxBytes)) { response.destroy(); stop('BODY_LIMIT'); return; }
-      let bytes = 0, chunks = 0, peakHeap = 0, peakRss = 0;
+      if (length !== undefined && /^\d+$/.test(String(length)) && Number.isSafeInteger(Number(length))) expectedBytes = Number(length);
+      if (length !== undefined && (!/^\d+$/.test(String(length)) || Number(length) > maxBytes)) { stop('BODY_LIMIT'); return; }
       response.on('data', chunk => {
         if (done) return; bytes += chunk.length; chunks++;
-        if (bytes > maxBytes) { response.destroy(); stop('BODY_LIMIT'); return; }
-        try { const usage = process.memoryUsage(); peakHeap = Math.max(peakHeap, usage.heapUsed); peakRss = Math.max(peakRss, usage.rss); if (peakHeap > MAX_HEAP_BYTES || peakRss > MAX_RSS_BYTES) fail('MEMORY_LIMIT'); consumer.write(chunk); } catch (error) { response.destroy(); if (!done) { done = true; clearTimeout(timer); req.destroy(); reject(Error(errorCode(error))); } }
+        if (bytes > maxBytes) { stop('BODY_LIMIT'); return; }
+        try { const usage = process.memoryUsage(); peakHeap = Math.max(peakHeap, usage.heapUsed); peakRss = Math.max(peakRss, usage.rss); if (peakHeap > MAX_HEAP_BYTES || peakRss > MAX_RSS_BYTES) fail('MEMORY_LIMIT'); consumer.write(chunk); } catch (error) { rejectFailure(error); }
       });
       response.on('error', () => stop('TRANSPORT_STOP'));
       response.on('aborted', () => stop('TRUNCATED'));
       response.on('end', () => {
         if (done) return;
         if (response.complete === false || (length !== undefined && bytes !== Number(length))) { stop('TRUNCATED'); return; }
-        try { const receipt = consumer.finish(); done = true; clearTimeout(timer); resolve({ ...receipt, transport: { bytes, chunks, elapsed_ms: Date.now() - started, peak_heap_bytes: peakHeap, peak_rss_bytes: peakRss, status: 200, identity_encoding: true, complete: true } }); } catch (error) { done = true; clearTimeout(timer); req.destroy(); reject(Error(errorCode(error))); }
+        try { const receipt = consumer.finish(); done = true; clearTimeout(timer); resolve({ ...receipt, transport: { bytes, chunks, elapsed_ms: Date.now() - started, peak_heap_bytes: peakHeap, peak_rss_bytes: peakRss, status: 200, identity_encoding: true, complete: true } }); } catch (error) { rejectFailure(error); }
       });
     });
     timer = setTimeout(() => stop('TIMEOUT_NO_RETRY'), 60000);
@@ -167,7 +176,7 @@ async function runProbe({ dir, books, approval, token, fetch = request }) {
     try {
       probe.grid = await fetch(step.url, token, gridConsumer(null, book, step.sheet), step.maxBytes);
       probe.grid_sha256 = semanticHash(probe.grid); probe.status = 'AWAITING_REVIEW'; receipt.status = 'HASHED'; receipt.bytes = probe.grid.body_bytes;
-    } catch (error) { probe.status = 'STOPPED'; probe.error = receipt.error = errorCode(error); receipt.status = 'FAILED_STOPPED'; atomic(ledgerFile, ledger); throw error; }
+    } catch (error) { probe.status = 'STOPPED'; probe.error = receipt.error = errorCode(error); if (error.transport) probe.failure_transport = receipt.failure_transport = error.transport; receipt.status = 'FAILED_STOPPED'; atomic(ledgerFile, ledger); throw error; }
     atomic(ledgerFile, ledger); atomic(file, probe); return probe;
   } catch (error) { probe.status = 'STOPPED'; probe.error = errorCode(error); try { atomic(file, probe); } catch { fail('PERSISTENCE_STOP'); } throw Error(probe.error); }
   finally { fs.closeSync(lock); fs.unlinkSync(lockFile); }
@@ -215,6 +224,7 @@ async function runPhase({ dir, phase, books, approval, token, fetch = request, p
           atomic(ledgerFile, ledger); atomic(progressFile, progress);
         } catch (error) {
           receipt.status = 'FAILED_STOPPED'; receipt.error = errorCode(error); progress.status = 'STOPPED'; progress.error = receipt.error;
+          if (error.transport) receipt.failure_transport = error.transport;
           atomic(ledgerFile, ledger); atomic(progressFile, progress); throw Error(receipt.error);
         }
       }

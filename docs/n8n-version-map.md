@@ -67,3 +67,26 @@ were rechecked unchanged after this stop. Other three staging versions and all
 26 synthetic rows were also unchanged. Cumulative use: 43/84 executions,
 134/500 mutations, 6/14 integrity GETs. No further Cloud request or critical test
 followed. This mapping records staging recovery, not a production release.
+
+
+### Critical synthetic continuation, 9 October 2026
+
+The develop commit containing this section includes the two Cloud-proven fixes
+and complete compact BEFORE evidence; final AFTER remains pending. Resolve its
+source SHA with `git log -1 --format=%H -- docs/n8n-version-map.md`.
+All six production IDs, versions and complete graphs/settings in the table above
+were freshly verified unchanged. All four production tables match their complete
+baseline hashes. No current candidate is deployed.
+
+| Restored staging workflow | Confirmed versionId | State |
+|---|---|---|
+| Panel yue6cjy20A2LJSHf | f234e927-87ce-4be9-bdf6-f5fe041523b3 | Inactive/unpublished |
+| Sync 4KtsLYoEoumiTjC3 | 7e9f25d3-6fa5-4758-bdc6-01180f4909a7 | Inactive/unpublished |
+| Mock handoff jmHDRypCGpv3XF4q | 52a29fdf-d5dd-42c5-9bf8-7bae78347654 | Inactive/unpublished |
+| Control ml9StJJLEqWXjgC5 | f508e8d2-3c7e-4627-91ab-760a5db97af1 | Inactive/unpublished |
+
+Restoration preserves original graph and configuration semantics. Mock handoff
+Batch controls has an explicit runOnceForAllItems Code mode, equal to the omitted
+original default. Temporary native/mocked test graphs are retained privately.
+See the [release manifest](release-candidate-20261009.md) for all six rebuilt
+candidate hashes and exact future diff; this mapping does not imply deployment.
