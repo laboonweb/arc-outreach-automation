@@ -4,6 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), https = require('nod
 const { JsonStream, semanticHash } = require('./integrity-json-stream');
 const { titles, RANGE, MAX_ROWS, MAX_COLUMNS } = require('./source-integrity-grid');
 const HEADERS = require('./dataset-output').ALL_HEADERS;
+const { OUTPUT_FIELDS } = require('./research-engine');
 const { save: atomic } = require('./write-integrity-state');
 const META_FIELDS = 'spreadsheetId,spreadsheetUrl,properties,namedRanges,developerMetadata,dataSources,dataSourceSchedules,comments,commentsViewMode,sheets(properties,merges,conditionalFormats,filterViews,protectedRanges,basicFilter,charts,bandedRanges,developerMetadata,rowGroups,columnGroups,slicers,tables,commentAnchors)';
 // Read whole GridData subtrees, including calculated/display values and future cell fields.
@@ -83,7 +84,11 @@ function gridConsumer(meta, book, title) {
       if (new Set(actual.map(s => s.properties.sheetId)).size !== actual.length) fail('GRID_SHEET_ASSOCIATION');
       const sheet = matching[0], props = expected ? expected.get(title) : sheet.properties, g = props.gridProperties, block = sheet.blocks.get(0);
       if (!block || sheet.blocks.size !== 1 || block.startRow !== 0 || block.startColumn !== 0 || block.rows > g.rowCount || block.maxValues > g.columnCount || block.rowMetadata > g.rowCount || block.columnMetadata > g.columnCount) fail('GRID_COVERAGE');
-      if (title === 'Arc Research' && (g.columnCount < HEADERS.length || HEADERS.some((header, index) => block.headers[index] !== header))) fail('RESEARCH_HEADERS_INCOMPLETE');
+      if (title === 'Arc Research') {
+        // Existing sheets preserve reviewer order and extra columns; machine positions stay fixed.
+        const names = block.headers.filter(Boolean);
+        if (g.columnCount < HEADERS.length || new Set(names).size !== names.length || HEADERS.some(header => !names.includes(header)) || OUTPUT_FIELDS.some((header, index) => block.headers[index] !== header)) fail('RESEARCH_HEADERS_INCOMPLETE');
+      }
       return { title, sheet_id: props.sheetId, rows: g.rowCount, columns: g.columnCount, requested_range: RANGE, complete_grid: true, required_research_columns: title === 'Arc Research' ? HEADERS.length : 0, sha256: digest.sha256, body_bytes: digest.bytes, property_refs: actual.map(s => ({ title: s.properties.title, sheet_id: s.properties.sheetId, sha256: s.propertyHash })), parser: { peak_token_bytes: digest.peakTokenBytes, peak_depth: digest.peakDepth, peak_object_keys: digest.peakObjectKeys } };
     }
   };

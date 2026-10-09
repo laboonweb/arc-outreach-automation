@@ -2,9 +2,10 @@
 
 **Local proof passed; the external method and cumulative ceiling of 62 are
 conditionally approved. Local receipt recovery is proven; live-probe and complete coverage gates remain
-incomplete. Stage 1 and production release remain blocked.** No Cloud execution,
-Google data request, provider operation or production change ran during this
-correction.
+incomplete. Stage 1 and production release remain blocked.** The corrected
+persistence attempt used one token POST and one Sheets GET, then stopped on
+research-header validation. No Cloud execution, provider operation or production
+write ran during this correction. The local header fix has not run live.
 The previously reviewed develop commits were pushed through `6a80b5e` first;
 main remains `b187df8`. Git does not deploy n8n.
 
@@ -68,8 +69,8 @@ there is no automatic exemption or retry.
 
 | Item | Fixed plan |
 |---|---|
-| Sheets data requests | 56 fresh GETs; six earlier GETs plus one retained failed reservation means **63 cumulative**. Original conditional ceiling 62; 63 awaits approval. Active cap remains 14. |
-| OAuth token POSTs | One already consumed; corrected probe plus separately gated BEFORE/AFTER would mean four total. Original planned ceiling two; four awaits approval. |
+| Sheets data requests | 8 counted slots now; 56 fresh GETs would mean **64 cumulative**. Original conditional ceiling 62; 64 awaits approval. Active cap remains 14. |
+| OAuth token POSTs | Two consumed; a new probe plus separately gated BEFORE/AFTER would mean five total. Original planned ceiling two is exhausted; increases await approval. Current helper maximum four also requires a reviewed correction for that future five-POST scope. |
 | n8n executions / source writes for integrity | 0 / 0 |
 | Response limits | 1 MiB buffered metadata; 64 MiB streamed per sheet, identity encoding only |
 | Parser limits | 16 KiB decoder input; token 1 MiB, depth 32, 128 keys/object, 256-byte keys |
@@ -98,8 +99,8 @@ access token for each phase; pass it privately in the process environment,
 never a chat message, command-line literal or Git file. The runner removes its
 environment entry after reading it and logs only redacted failure codes.
 No refresh token is persisted. The original design planned two token-exchange
-POSTs. One has since been consumed by the failed probe; stopping after each
-phase without saving tokens now requires four total. This increase awaits
+POSTs. Both have since been consumed by stopped probes; stopping after each
+future phase without saving tokens now requires five total. This increase awaits
 approval. Ordinary owner sign-in browser traffic is not a spreadsheet integrity
 request. The grant reads Sheets on the owner's account; the runner additionally
 restricts access to the three registry IDs. Exact read-only authorization passed;
@@ -136,7 +137,7 @@ bounded Sheets response is still required.
 
 ## Local evidence
 
-Full suite: **463 passed, zero failed/skipped**, including 26 streaming tests for
+Full suite: **465 passed, zero failed/skipped**, including 28 streaming tests for
 determinism, all 208 headers, full metadata/cell coverage, association changes,
 invalid sparse shapes, incomplete/truncated JSON, duplicate keys, UTF-8, bounds,
 authentication/redirect refusal, wire/memory caps, before/after mismatch,
@@ -220,9 +221,10 @@ validated candidate exactly. No application logic or Cloud graph was changed.
 **Current gates:** the owner conditionally approved ceiling 62, read-only OAuth
 setup and a single reviewed live request before continuation. Ordinary-Chrome
 authorization passed; probe persistence failed before fetch, as detailed below.
-The local correction now passes 80 native writes and all 463 tests. No corrected
-live retry has run; the changed cumulative budgets still await approval.
-The ledger conservatively records 7/14 GET slots, 43/84 executions and 134/500
+The local correction passes 80 native writes; the later schema correction passes
+all 465 tests. The corrected persistence probe failed its header-order check;
+the local header fix has not run live. Changed budgets still await approval.
+The ledger conservatively records 8/14 GET slots, 43/84 executions and 134/500
 mutations. Private pinned single-probe approval and owner-restricted credentials
 exist. No cap update or subsequent request has been made.
 The owner subsequently configured the Desktop client in ordinary Chrome and
@@ -268,9 +270,9 @@ an explicitly audited reservation reconciliation or ceiling 63 for owner review
 before any new live request. Preserve the failed probe, original approval,
 authorized grant metadata and ledger baselines; do not clear them to rerun.
 
-## Concrete recovery scope awaiting approval
+## Original persistence recovery scope
 
-Keep the failed reservation counted and conditionally extend the cumulative GET
+The prepared scope before the latest single request was: keep the failed reservation counted and conditionally extend the cumulative GET
 ceiling from 62 to 63; extend planned OAuth token POSTs from two to four. Neither
 change permits an automatic retry or additional Cloud execution. Reconfirm
 unchanged 300/60 read quotas, no billing and paused source edits/runs. Check the
@@ -291,3 +293,32 @@ eight local rename attempts spaced 50 ms, verifies unchanged old and intact new
 bytes, flushes writes and refuses unknown IO errors or conflicting mutations.
 This retries local file replacement only. The responsible Windows process is
 unknown; persistent sharing failures still stop before further requests.
+
+## Single-probe result and next gate
+
+The owner completed fresh manual consent. Exact Sheets read-only authorization
+and local receipt persistence passed. One Sheets GET reached the final header
+validation and stopped with `INTEGRITY_EXTERNAL_RESEARCH_HEADERS_INCOMPLETE`.
+There is no usable probe or phase receipt. Numeric wire/time/memory metrics were
+not retained when final validation threw; do not claim that gate is certified.
+All remaining 55 requests and all Cloud executions stayed stopped.
+
+The saved October 7 header receipts have 221/208/221 columns, all 208 required
+fields and the fixed 113-field machine prefix. Only 143 fields match new-sheet
+positions because reviewer order is preserved. The previous exact-position
+check therefore rejected layouts the existing application supports. The narrow
+local correction accepts reordered reviewer fields and extra columns, rejects
+missing/duplicate headers and reordered machine fields, and continues hashing
+the whole physical grid. All three saved layouts pass synthetic replay; the
+full suite passes 465 tests. These old receipts do not certify today's live
+schema. No live repeat has run after the correction.
+
+Consumption is now 8/14 GET slots, two token POSTs, 43/84 Cloud executions and
+134/500 mutations. Seven Google requests ran; one pre-dispatch reservation is
+retained. A fresh complete pair would require conditional ceiling 64 instead of
+62. The immediate new scope would be one additional token POST and one Sheets
+GET, then another stop/report. Separate remaining phase consents would mean
+five total token POSTs and need an approved, tested authorization guard change.
+Neither resource extension nor another live request is authorized. Preserve
+both stopped probes, their approvals, the saved layouts and all passing Cloud
+evidence. Production release remains blocked.

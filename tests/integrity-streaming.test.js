@@ -45,6 +45,26 @@ test('empty trailing cells are handled by Google sparse semantics without accept
   value.sheets[0].data = [{ rowData: [{ values: [42] }] }]; assert.throws(() => consume(value, book, 'Synthetic leads'), /GRID_SHAPE/);
   const long = grid(book, 'Synthetic leads'); long.sheets[0].data[0].rowData[0].values[0].userEnteredValue.stringValue = 'SYNTHETIC '.repeat(100); assert.equal(consume(long, book, 'Synthetic leads').complete_grid, true);
 });
+
+test('complete research grids permit preserved reviewer order and hash every extra column', () => {
+  const machineCount = require('../scripts/research-engine').OUTPUT_FIELDS.length;
+  for (const extra of [0, 13]) {
+    const book = books[0], value = grid(book, 'Arc Research'), ordered = [...headers.slice(0, machineCount), ...headers.slice(machineCount).reverse(), ...Array.from({ length: extra }, (_, i) => 'SYNTHETIC extra ' + i)];
+    value.sheets[0].properties.gridProperties.columnCount = ordered.length;
+    value.sheets[0].data[0].rowData[0].values = ordered.map(h => ({ userEnteredValue: { stringValue: h } }));
+    const check = () => { const c = v.gridConsumer(null, book, 'Arc Research'); c.write(Buffer.from(JSON.stringify(value))); return c.finish(); };
+    const before = check(); assert.equal(before.required_research_columns, 208); assert.equal(before.columns, 208 + extra); assert.equal(before.complete_grid, true);
+    const values = value.sheets[0].data[0].rowData[1].values; while (values.length < ordered.length) values.push({});
+    values[ordered.length - 1] = { note: 'SYNTHETIC extra-column change' }; assert.notEqual(check().sha256, before.sha256);
+  }
+});
+
+test('research compatibility still rejects missing fields, duplicate headers and reordered machine columns', () => {
+  const machineCount = require('../scripts/research-engine').OUTPUT_FIELDS.length;
+  for (const mutate of [values => values.pop(), values => values[values.length - 1] = structuredClone(values[machineCount]), values => [values[0], values[1]] = [values[1], values[0]], values => values[values.length - 1] = { userEnteredValue: { stringValue: 'SYNTHETIC unrelated field' } }]) {
+    const value = grid(books[0], 'Arc Research'); mutate(value.sheets[0].data[0].rowData[0].values); assert.throws(() => consume(value), /RESEARCH_HEADERS_INCOMPLETE/);
+  }
+});
 test('original, calculated and display values, formats, notes, rich text and dimensions affect hashes', () => {
   const book = books[0], original = consume(grid(book, 'Arc Research')).sha256;
   for (const mutate of [c => c.userEnteredValue.formulaValue = '=1+2', c => c.userEnteredValue = { stringValue: 'SYNTHETIC changed literal' }, c => c.effectiveValue = { numberValue: 3 }, c => c.formattedValue = '3.00', c => c.note = 'changed', c => c.userEnteredFormat.backgroundColorStyle.rgbColor.red = 0, c => c.effectiveFormat.numberFormat.type = 'DATE', c => c.textFormatRuns = [{ startIndex: 0, format: { bold: true } }], c => c.dataValidation = { strict: true }, c => c.chipRuns = [{ startIndex: 0, chip: {} }]]) { const value = grid(book, 'Arc Research'); mutate(value.sheets[0].data[0].rowData[1].values[0]); assert.notEqual(consume(value).sha256, original); }

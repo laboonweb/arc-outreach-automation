@@ -81,13 +81,22 @@ helper counts all preserved OAuth token POST receipts and enforces the approval'
 budget, with a maximum of four. Default remains two; no budget is increased by
 source code alone. The flow still invokes only one Google probe and stops.
 
-Keeping the old pre-dispatch reservation requires a conditionally approved
-GET-slot ceiling of 63, although only the original 56 fresh Sheets GETs are
-planned. OAuth accounting requires four total token POSTs if each stopped phase
-uses a fresh memory-only token: the first failed probe, corrected probe, BEFORE
-and AFTER. One corrected probe now uses one GET and one token POST; all remaining
-requests stay stopped pending its report. No production/Cloud/provider changes
-are included. These changed budgets require explicit owner approval.
+The corrected persistence attempt ran once after renewed ordinary-Chrome
+consent. Its one token POST and one Sheets GET fit existing budgets. Exact scope
+and durable receipt writes passed, but the probe stopped at the strict
+research-header order check. Two total token exchanges are now consumed; the
+default token budget is exhausted. GET accounting is 8/14, including the old
+pre-dispatch reservation. No remaining request ran.
+
+Saved header receipts prove the verifier rejected existing reviewer layouts
+that contain all 208 fields. The local correction preserves the 113-field
+machine prefix, requires every field exactly once and hashes extra columns.
+Three saved layouts pass synthetic replay; another live certification is still
+needed. A new probe requires one additional token exchange. A fresh complete
+pair would total 64 counted GET slots; separate probe/BEFORE/AFTER consents would
+mean five total token POSTs. Those changed budgets require owner approval; the
+helper currently refuses a token ceiling above four. Do not run another probe,
+raise that guard, or begin phase authorization without the next approved scope.
 
 Local regressions use synthetic client/grant data and localhost only. They cover
 client and ACL refusal, PKCE and exact scope, token transport bounds, owner

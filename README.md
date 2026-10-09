@@ -11,10 +11,10 @@ approved 8 MiB body limit. It returned the redacted failure
 testing stopped without retry. The isolated control was restored exactly, and
 fresh production and synthetic preservation checks passed. The unchanged local
 candidate has been rebuilt with all six hashes unchanged. Latest full local suite:
-463 passed, zero failed/skipped, including 26 external streaming integrity tests,
+465 passed, zero failed/skipped, including 28 external streaming integrity tests,
 12 local OAuth/PKCE tests and five receipt-persistence regressions.
-Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 7/14 integrity
-GET slots (six earlier GETs plus one retained pre-dispatch reservation).
+Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 8/14 integrity
+GET slots (seven actual requests plus one retained pre-dispatch reservation).
 Complete paired source integrity remains blocked. The external, read-only
 streaming verifier has been demonstrated locally on the 208-column schema and
 32-66 MB synthetic responses, with less than 23 MB peak heap. Its 56 new GETs and
@@ -29,27 +29,35 @@ ACL; the screenshot-exposed older secret was disabled by the owner. The tested
 validates the actual granted scope and invokes only one bounded probe. Ordinary
 Chrome authorization succeeded: one token POST granted exactly Sheets read-only.
 The probe stopped with `INTEGRITY_EXTERNAL_PERSISTENCE_STOP` while replacing its
-counted pre-dispatch receipt, before calling the Google fetch. No live workbook
-response or usable probe receipt exists. The reservation remains counted, all
-failed files are preserved, and no retry or remaining GET ran. The original OS
+counted pre-dispatch receipt, before calling the Google fetch. That attempt
+received no live workbook response. The reservation remains counted and all
+failed files are preserved. The original OS
 error was redacted. A separate local reproduction captured an EPERM replacement
 failure in the same private folder. The shared receipt writer now flushes and
 verifies bytes, retries only a bounded local sharing refusal, and stops on
 conflicts or ambiguous persistence. All 80 native writes passed in the normal
 and owner-restricted folders, recovering five temporary sharing refusals.
 The process responsible for those refusals remains unidentified.
-No Cloud execution ran during this correction. A successful probe uses one GET
-within the existing ceiling and pauses
-for review; complete BEFORE still requires paired capacity. Its grid is
-reused in BEFORE, preserving exactly 56 fresh GETs for complete paired coverage.
-Stage 2 and production publication remain on hold. The active cap remains 14;
-conservatively retaining this failed reservation would require ceiling 63 to
-complete a fresh probe plus its remaining 55 GETs. The recovery also needs a
-fresh ordinary-Chrome consent because the earlier token was never saved.
-Four total token exchanges would cover the failed attempt, corrected probe and
-separately gated BEFORE/AFTER phases. Changes to those budgets await owner
-approval. The next executable scope is only one token POST and one Sheets GET,
-then a report; no Cloud execution or remaining integrity request is included.
+The owner resumed and approved fresh ordinary-Chrome consent. One token POST and
+one Sheets GET ran under existing caps. OAuth and durable persistence passed;
+the probe stopped with `INTEGRITY_EXTERNAL_RESEARCH_HEADERS_INCOMPLETE` at its
+strict header-order check. No usable probe, complete BEFORE or AFTER exists.
+The remaining 55 reads and all Cloud executions stayed stopped.
+
+Saved October 7 header receipts show all 208 required fields and an intact
+113-field machine prefix, with preserved reviewer order and 13 extra columns in
+two books. The verifier now accepts those existing layouts while rejecting
+missing/duplicate fields and reordered machine columns; it hashes every allocated
+column. All three saved layouts pass synthetic grid replay. This is local
+compatibility evidence, not a fresh live certification. No Google repeat ran
+after that fix. Live size/time/memory metrics were not retained on the failure.
+
+Stage 2 and publication remain on hold. Active GET cap stays 14; conditional cap
+62 is unchanged. A fresh 56-read pair would now total 64 counted slots and needs
+owner approval. Two token exchanges have been consumed; another probe requires
+one more, and separate BEFORE/AFTER consents would mean five total. Neither
+budget increase nor another live request is authorized. No Cloud, source or
+provider write occurred during this gate.
 
 See the [compact remaining execution plan](docs/integrity-streaming-stage1-plan.md)
 and [preserved Cloud readiness evidence](docs/readiness-20261009.md).
