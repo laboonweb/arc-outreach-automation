@@ -1,6 +1,9 @@
 'use strict';
 const crypto = require('crypto');
-const MAX_BYTES = 8 * 1024 * 1024, MAX_ROWS = 5000, MAX_COLUMNS = 100, MAX_TABS = 10;
+// Arc Research currently has 208 columns. IV covers 256, with room for the
+// existing schema while still rejecting any grid outside the requested range.
+const MAX_BYTES = 8 * 1024 * 1024, MAX_ROWS = 5000, MAX_COLUMNS = 256, MAX_TABS = 10;
+const RANGE = 'A1:IV5000';
 const FIELDS = 'spreadsheetId,properties,namedRanges,developerMetadata,sheets(properties,data(startRow,startColumn,rowData(values(userEnteredValue,userEnteredFormat,note,dataValidation,textFormatRuns)),rowMetadata,columnMetadata),merges,conditionalFormats,filterViews,protectedRanges,basicFilter,charts,bandedRanges,developerMetadata,rowGroups,columnGroups,slicers,tables)';
 const canonical = value => JSON.stringify(value, (key, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : item);
 const digest = value => crypto.createHash('sha256').update(canonical(value)).digest('hex');
@@ -9,7 +12,7 @@ function request(book) {
   if (!/^[a-zA-Z0-9_-]{5,100}$/.test(book.spreadsheet_id)) throw Error('INTEGRITY_BOOK_ID_REQUIRED');
   const tabs = titles(book);
   if (tabs.length > MAX_TABS || tabs.some(x => typeof x !== 'string' || !x.trim())) throw Error('INTEGRITY_TAB_LIMIT');
-  return 'https://sheets.googleapis.com/v4/spreadsheets/' + book.spreadsheet_id + '?fields=' + encodeURIComponent(FIELDS) + '&' + tabs.map(x => 'ranges=' + encodeURIComponent("'" + x.replace(/'/g, "''") + "'!A1:CV5000")).join('&');
+  return 'https://sheets.googleapis.com/v4/spreadsheets/' + book.spreadsheet_id + '?fields=' + encodeURIComponent(FIELDS) + '&' + tabs.map(x => 'ranges=' + encodeURIComponent("'" + x.replace(/'/g, "''") + "'!" + RANGE)).join('&');
 }
 function receipt(response, book) {
   if (response.statusCode !== 200 || !response.body || response.body.error) throw Error('INTEGRITY_NATIVE_HTTP_STOP');
@@ -25,6 +28,11 @@ function receipt(response, book) {
     const rows = sheet.data[0].rowData || [];
     if (rows.length > grid.rowCount || rows.some(row => (row.values || []).length > grid.columnCount)) throw Error('INTEGRITY_NATIVE_GRID_DIMENSION_MISMATCH');
   }
-  return { dataset: book.dataset_id, body_bytes: bytes, content_sha256: digest(body), tabs: body.sheets.map(sheet => ({ title: sheet.properties.title, rows: sheet.properties.gridProperties.rowCount, columns: sheet.properties.gridProperties.columnCount, sha256: digest(sheet) })), source_writes: 0, research_writes: 0, table_writes: 0 };
+  return { ok: true, dataset: book.dataset_id, body_bytes: bytes, content_sha256: digest(body), tabs: body.sheets.map(sheet => ({ title: sheet.properties.title, rows: sheet.properties.gridProperties.rowCount, columns: sheet.properties.gridProperties.columnCount, sha256: digest(sheet) })), source_writes: 0, research_writes: 0, table_writes: 0 };
 }
-module.exports = { MAX_BYTES, MAX_ROWS, MAX_COLUMNS, MAX_TABS, FIELDS, canonical, digest, titles, request, receipt };
+function failure(error) {
+  // Do not echo arbitrary exception text: it can contain source cell contents.
+  const allowed = new Set(['INTEGRITY_NATIVE_HTTP_STOP', 'INTEGRITY_NATIVE_BODY_LIMIT', 'INTEGRITY_NATIVE_ID_OR_TABS', 'INTEGRITY_NATIVE_TAB_COVERAGE', 'INTEGRITY_NATIVE_GRID_COVERAGE_LIMIT', 'INTEGRITY_NATIVE_GRID_START_REQUIRED', 'INTEGRITY_NATIVE_GRID_DIMENSION_MISMATCH']);
+  return { ok: false, error: allowed.has(error?.message) ? error.message : 'INTEGRITY_NATIVE_HASH_RUNTIME_FAILED', source_writes: 0, research_writes: 0, table_writes: 0 };
+}
+module.exports = { MAX_BYTES, MAX_ROWS, MAX_COLUMNS, MAX_TABS, RANGE, FIELDS, canonical, digest, titles, request, receipt, failure };

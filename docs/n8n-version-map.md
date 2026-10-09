@@ -34,3 +34,20 @@ installed or executed. No new production or staging workflow version exists.
 Resolve the exact development Git SHA with `git log -1 --format=%H` on that
 checkpoint; its private receipt records the SHA and unchanged candidate hashes.
 See [readiness and pending integrity approval](readiness-20261009.md).
+
+### Subsequent isolated integrity attempt, 9 October
+
+The checkpoint above is Git `60d164c4cca7e22ca39de8a6a64babadf4d43bc5`.
+After owner approval, only staging control `ml9StJJLEqWXjgC5` changed:
+
+| Purpose | Confirmed staging version | State | Outcome |
+|---|---|---|---|
+| Original nine-node synthetic contracts | 916b40cb-86e0-4bcb-9ca0-246add048a0e | Inactive/unpublished | Preserved restoration source |
+| Owner-approved four-node OAuth probe | b5294e38-0a8a-4a33-b448-1684295e469a | Inactive/unpublished | One GET succeeded, hash Code failed; no baseline |
+| Restored nine-node synthetic contracts | bf6490c3-bfac-44b7-9d64-296cd1336385 | Inactive/unpublished | Nodes, connections, settings and groups exact to original |
+
+The corrected 256-column probe exists only locally. Its SDK passes validation;
+no Cloud version represents that correction yet. The development recovery commit
+also records 420 passing local tests and unchanged six-candidate hashes. Resolve
+its SHA from this file's commit. Production versions above were freshly rechecked
+unchanged after the failed probe; this staging version map is not a release.

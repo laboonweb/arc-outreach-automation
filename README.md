@@ -4,9 +4,13 @@
 implementation with bounded Stage 1 corrections. Cloud validation is incomplete;
 this revision is not production validated.** Editor authentication now survives
 two independently observed reloads. The separately reviewed Google export
-destination returned HTTP 400 and was not retried. Totals remain 41/84 Cloud
-executions and 134/500 synthetic mutations; integrity GETs are 4/14 after the
-owner-approved ceiling extension. Stage 2 and production publication remain on hold.
+destination returned HTTP 400. The owner-approved OAuth GET subsequently succeeded,
+but its hash check failed. The isolated control was restored exactly. A confirmed
+100-column probe ceiling conflicted with the 208-column research schema; the
+local correction and compact failure receipts pass 420 tests and SDK validation.
+Totals are 42/84 Cloud executions, 134/500 synthetic mutations and 5/14 integrity
+GETs. No usable source baseline yet; corrected Cloud recovery awaits approval.
+Stage 2 and production publication remain on hold.
 
 See the [current readiness report and proposed integrity replacement](docs/readiness-20261009.md).
 

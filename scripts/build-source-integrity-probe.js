@@ -8,12 +8,15 @@ function build(book, webhookCredential, googleCredential = base.GOOGLE) {
   get.credentials = { googleSheetsOAuth2Api: googleCredential };
   get.parameters.options = { timeout: 30000, allowUnauthorizedCerts: false, redirect: { redirect: { followRedirects: false } }, response: { response: { fullResponse: true, neverError: false, responseFormat: 'json' } } };
   get.onError = 'stopWorkflow'; get.retryOnFail = false;
-  const compact = base.code('Return only integrity hashes', bundle('source-integrity-grid') + 'return [{json:arc.receipt($input.first().json,' + JSON.stringify(book) + ')}];');
-  const respond = { name: 'Private compact integrity receipt', type: 'n8n-nodes-base.respondToWebhook', typeVersion: 1.4, parameters: { respondWith: 'json', responseBody: '={{ JSON.stringify($json) }}', options: { responseCode: 200, responseHeaders: { entries: [{ name: 'Cache-Control', value: 'no-store' }, { name: 'Referrer-Policy', value: 'no-referrer' }, { name: 'X-Content-Type-Options', value: 'nosniff' }] } } } };
+  const compact = base.code('Return only integrity hashes', bundle('source-integrity-grid') + 'try { return [{json:arc.receipt($input.first().json,' + JSON.stringify(book) + ')}]; } catch(error) { return [{json:arc.failure(error)}]; }');
+  const respond = { name: 'Private compact integrity receipt', type: 'n8n-nodes-base.respondToWebhook', typeVersion: 1.4, parameters: { respondWith: 'json', responseBody: '={{ JSON.stringify($json) }}', options: { responseCode: '={{ $json.ok === true ? 200 : 422 }}', responseHeaders: { entries: [{ name: 'Cache-Control', value: 'no-store' }, { name: 'Referrer-Policy', value: 'no-referrer' }, { name: 'X-Content-Type-Options', value: 'nosniff' }] } } } };
   const nodes = [intake, get, compact, respond], connections = {};
   nodes.forEach((node, index) => { node.position = [index * 240, 0]; if (index < nodes.length - 1) connections[node.name] = { main: [[{ node: nodes[index + 1].name, type: 'main', index: 0 }]] }; });
   const workflow = { name: 'Arc Operator Smoke 20261008-319ba8 control', active: false, nodes, connections, settings: { ...base.SETTINGS, saveManualExecutions: false, saveDataSuccessExecution: 'none', saveDataErrorExecution: 'none', saveExecutionProgress: false, executionTimeout: 60 } };
-  return { workflow, sdk: require('./workflow-sdk-compact').compact(workflow) };
+  // SDK-only shape hint; compact() replaces node output samples with one shared
+  // fixture. This cannot become a baseline or change runtime node parameters.
+  const sdk = require('./workflow-sdk-compact').compact(workflow).replace(/^const fixtureOutput=[^\r\n]+;$/m, 'const fixtureOutput=[{"ok":true,"source_writes":0,"research_writes":0,"table_writes":0}];');
+  return { workflow, sdk };
 }
 module.exports = { build };
 if (require.main === module) {
