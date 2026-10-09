@@ -1,7 +1,7 @@
 # Remaining Stage 1 execution plan, 9 October 2026
 
 **Local proof passed; the external method and cumulative ceiling of 62 are
-conditionally approved. Live-probe persistence and complete coverage gates remain
+conditionally approved. Local receipt recovery is proven; live-probe and complete coverage gates remain
 incomplete. Stage 1 and production release remain blocked.** No Cloud execution,
 Google data request, provider operation or production change ran during this
 correction.
@@ -68,7 +68,8 @@ there is no automatic exemption or retry.
 
 | Item | Fixed plan |
 |---|---|
-| Sheets data requests | 56 new GETs; six previously consumed means **62 cumulative**, conditionally approved ceiling 14 -> 62 |
+| Sheets data requests | 56 fresh GETs; six earlier GETs plus one retained failed reservation means **63 cumulative**. Original conditional ceiling 62; 63 awaits approval. Active cap remains 14. |
+| OAuth token POSTs | One already consumed; corrected probe plus separately gated BEFORE/AFTER would mean four total. Original planned ceiling two; four awaits approval. |
 | n8n executions / source writes for integrity | 0 / 0 |
 | Response limits | 1 MiB buffered metadata; 64 MiB streamed per sheet, identity encoding only |
 | Parser limits | 16 KiB decoder input; token 1 MiB, depth 32, 128 keys/object, 256-byte keys |
@@ -87,19 +88,22 @@ An oversized header/body, timeout, 401/403/429, truncation, encoding mismatch,
 memory or persistence failure stops without a usable phase receipt. No smaller
 field mask, cap increase or blind repeat follows that stop.
 
-No usable local Google credential or gcloud installation was found. Do not
-extract n8n's Google credential. An owner-approved desktop OAuth client with
-Sheets API enabled and `spreadsheets.readonly` is needed. Use Google's
+The owner configured the Desktop OAuth client in ordinary Chrome, with the
+Sheets API enabled and only `spreadsheets.readonly`. The replacement client
+JSON is in an owner-restricted private folder; the exposed older secret is
+disabled. Do not extract n8n's Google credential. Use Google's
 [desktop OAuth flow](https://developers.google.com/identity/protocols/oauth2/native-app):
 PKCE S256, state verification and a loopback callback. Obtain a short-lived
 access token for each phase; pass it privately in the process environment,
 never a chat message, command-line literal or Git file. The runner removes its
 environment entry after reading it and logs only redacted failure codes.
-No refresh token or long-lived credential is needed. Plan at most two OAuth
-token-exchange POSTs, separate from the 56 Sheets GETs; ordinary owner sign-in
-browser traffic is not a spreadsheet integrity request. This grant reads Sheets
-on the owner's account; the runner additionally restricts access to the three
-registry IDs. OAuth provisioning is a remaining gate, not completed validation.
+No refresh token is persisted. The original design planned two token-exchange
+POSTs. One has since been consumed by the failed probe; stopping after each
+phase without saving tokens now requires four total. This increase awaits
+approval. Ordinary owner sign-in browser traffic is not a spreadsheet integrity
+request. The grant reads Sheets on the owner's account; the runner additionally
+restricts access to the three registry IDs. Exact read-only authorization passed;
+the Sheets transport and complete live integrity coverage remain unverified.
 The owner authorized a dedicated Google project, which was created with the
 Sheets API enabled. The actual project quotas are 300 reads/minute/project and
 60 reads/minute/user; project usage was zero. The owner confirmed no billing
@@ -108,8 +112,8 @@ billing/OAuth route stalled and a fresh tab could not load the project list.
 A separately authorized Chrome connector reached sign-in, where Google rejected
 the automation-controlled browser as potentially insecure. The owner supplied
 the rejection screenshot. Stop without another login attempt, browser-security
-changes, cookie extraction or a credential workaround. Client setup and grant
-verification remain gated. No OAuth client, token exchange or grant occurred.
+changes, cookie extraction or a credential workaround. The owner subsequently
+completed client setup and consent using ordinary Chrome, as recorded below.
 
 The Sheets read-only scope applies to spreadsheets accessible to the account;
 Google does not offer a read-only OAuth scope restricted to three file IDs. The
@@ -127,11 +131,12 @@ and billing before access; buy no quota and stop on unaccounted costs.
 The integrity runner adds no n8n usage. Remaining synthetic tests use the existing
 trial allowance only after a fresh authentication/capacity check. No paid
 research, infrastructure rental, package installation or real provider call is
-part of this plan. Local connectivity/TLS and the OAuth grant are still unproved.
+part of this plan. OAuth connectivity and the exact grant passed; a successful
+bounded Sheets response is still required.
 
 ## Local evidence
 
-Full suite: **456 passed, zero failed/skipped**, including 25 streaming tests for
+Full suite: **463 passed, zero failed/skipped**, including 26 streaming tests for
 determinism, all 208 headers, full metadata/cell coverage, association changes,
 invalid sparse shapes, incomplete/truncated JSON, duplicate keys, UTF-8, bounds,
 authentication/redirect refusal, wire/memory caps, before/after mismatch,
@@ -215,6 +220,8 @@ validated candidate exactly. No application logic or Cloud graph was changed.
 **Current gates:** the owner conditionally approved ceiling 62, read-only OAuth
 setup and a single reviewed live request before continuation. Ordinary-Chrome
 authorization passed; probe persistence failed before fetch, as detailed below.
+The local correction now passes 80 native writes and all 463 tests. No corrected
+live retry has run; the changed cumulative budgets still await approval.
 The ledger conservatively records 7/14 GET slots, 43/84 executions and 134/500
 mutations. Private pinned single-probe approval and owner-restricted credentials
 exist. No cap update or subsequent request has been made.
@@ -222,7 +229,7 @@ The owner subsequently configured the Desktop client in ordinary Chrome and
 confirmed its sole read-only scope, Testing audience, owner test user and current
 300/60 quotas, no linked billing and paused source edits/runs. Its replacement
 JSON is local with verified owner-only ACLs; the screenshot-exposed older secret
-was disabled. The new [PKCE helper](integrity-google-oauth.md) has 11 local OAuth
+was disabled. The new [PKCE helper](integrity-google-oauth.md) has 12 local OAuth
 regressions and can invoke only the single probe. A new private manifest pins the
 one-request budget gate; the earlier manifests and ledger baselines are preserved.
 Private prerequisites started as VERIFIED_EXCEPT_OAUTH; exact granted scope was
@@ -260,3 +267,27 @@ prove the receipt-write correction first. Present the bounded retry and either
 an explicitly audited reservation reconciliation or ceiling 63 for owner review
 before any new live request. Preserve the failed probe, original approval,
 authorized grant metadata and ledger baselines; do not clear them to rerun.
+
+## Concrete recovery scope awaiting approval
+
+Keep the failed reservation counted and conditionally extend the cumulative GET
+ceiling from 62 to 63; extend planned OAuth token POSTs from two to four. Neither
+change permits an automatic retry or additional Cloud execution. Reconfirm
+unchanged 300/60 read quotas, no billing and paused source edits/runs. Check the
+existing client and owner-only ACL locally, pin the corrected manifest, and use
+a new approved receipt identifier without replacing failed evidence.
+
+For this gate only, the owner opens the fresh loopback page in ordinary Chrome
+and grants exactly read-only Sheets access. The helper performs one bounded
+token POST and one streamed AUSTRALIA Arc Research grid GET, then exits and
+reports bytes, chunks, time, memory, physical grid and all 208 required columns.
+It runs no remaining GET, Cloud execution, source/table write or provider call.
+Successful receipt review is required before the remaining 27 BEFORE and 28
+AFTER reads. All existing response/time/memory/completeness limits remain fixed.
+
+The corrected shared writer passed 40 native writes in each of the two actual
+private folders and recovered five temporary Windows sharing refusals. It allows
+eight local rename attempts spaced 50 ms, verifies unchanged old and intact new
+bytes, flushes writes and refuses unknown IO errors or conflicting mutations.
+This retries local file replacement only. The responsible Windows process is
+unknown; persistent sharing failures still stop before further requests.

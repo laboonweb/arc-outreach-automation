@@ -59,7 +59,35 @@ receipt. An initial authorization receipt is created exclusively; a prior
 attempt or integrity probe prevents silent replay. Failed replacement files are
 preserved. Any uncertain persistence or transport failure stops. Inspect the
 durable ledger to establish attempted GET consumption; never infer zero from a
-failed response or retry automatically.
+failed response or retry a Google operation automatically.
+
+## Locally proven receipt recovery
+
+The original local writer reproduced EPERM on its third synthetic replacement
+in the actual workspace. The shared replacement writer flushes a unique file,
+verifies its hash, and permits at most eight rename attempts spaced 50 ms apart
+only for EPERM/EACCES/EBUSY. Every retry requires unchanged original bytes and
+an intact replacement. Unknown errors, conflicts, flush/read-back failures or
+exhausted attempts stop and preserve recovery files. This is local file recovery,
+not a network retry. Eighty native synthetic replacements in the regular and
+owner-restricted folders passed, with five transient refusals recovered. The
+specific process causing the sharing refusals was not identified or disabled.
+The persistence module is pinned in the integrity manifest.
+
+An explicitly approved new probe attempt uses a 32-character hex attempt ID and
+separate approval, probe and authorization receipts. Original failed receipts
+and budget history remain untouched. Reusing that attempt is refused. The
+helper counts all preserved OAuth token POST receipts and enforces the approval's
+budget, with a maximum of four. Default remains two; no budget is increased by
+source code alone. The flow still invokes only one Google probe and stops.
+
+Keeping the old pre-dispatch reservation requires a conditionally approved
+GET-slot ceiling of 63, although only the original 56 fresh Sheets GETs are
+planned. OAuth accounting requires four total token POSTs if each stopped phase
+uses a fresh memory-only token: the first failed probe, corrected probe, BEFORE
+and AFTER. One corrected probe now uses one GET and one token POST; all remaining
+requests stay stopped pending its report. No production/Cloud/provider changes
+are included. These changed budgets require explicit owner approval.
 
 Local regressions use synthetic client/grant data and localhost only. They cover
 client and ACL refusal, PKCE and exact scope, token transport bounds, owner

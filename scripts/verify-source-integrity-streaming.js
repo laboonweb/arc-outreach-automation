@@ -4,6 +4,7 @@ const fs = require('node:fs'), path = require('node:path'), https = require('nod
 const { JsonStream, semanticHash } = require('./integrity-json-stream');
 const { titles, RANGE, MAX_ROWS, MAX_COLUMNS } = require('./source-integrity-grid');
 const HEADERS = require('./dataset-output').ALL_HEADERS;
+const { save: atomic } = require('./write-integrity-state');
 const META_FIELDS = 'spreadsheetId,spreadsheetUrl,properties,namedRanges,developerMetadata,dataSources,dataSourceSchedules,comments,commentsViewMode,sheets(properties,merges,conditionalFormats,filterViews,protectedRanges,basicFilter,charts,bandedRanges,developerMetadata,rowGroups,columnGroups,slicers,tables,commentAnchors)';
 // Read whole GridData subtrees, including calculated/display values and future cell fields.
 const GRID_FIELDS = 'spreadsheetId,sheets(properties,data)';
@@ -28,7 +29,7 @@ function manifest(books) {
       requests: [{ role: 'metadata-start', url: apiUrl(book), maxBytes: META_BYTES }, ...sheets.map(sheet => ({ role: 'grid', sheet, range: RANGE, url: apiUrl(book, sheet), maxBytes: GRID_BYTES })), { role: 'metadata-end', url: apiUrl(book), maxBytes: META_BYTES }] };
   });
   const onePhaseGets = datasets.reduce((n, d) => n + d.requests.length, 0);
-  const result = { method: 'EXTERNAL_STREAMING_SHEETS_V1', source_sha256: sha(fs.readFileSync(__filename)), parser_sha256: sha(fs.readFileSync(require.resolve('./integrity-json-stream'))), schema_sha256: semanticHash(HEADERS), schema_columns: HEADERS.length,
+  const result = { method: 'EXTERNAL_STREAMING_SHEETS_V1', source_sha256: sha(fs.readFileSync(__filename)), parser_sha256: sha(fs.readFileSync(require.resolve('./integrity-json-stream'))), persistence_sha256: sha(fs.readFileSync(require.resolve('./write-integrity-state'))), schema_sha256: semanticHash(HEADERS), schema_columns: HEADERS.length,
     datasets, onePhaseGets, pairedGets: onePhaseGets * 2, cloudExecutions: 0, sourceWrites: 0, tokenBytes: TOKEN_BYTES, gridBytes: GRID_BYTES, metadataBytes: META_BYTES, heapBytes: MAX_HEAP_BYTES, rssBytes: MAX_RSS_BYTES, requestTimeoutMs: 60000, minimumStartIntervalMs: 2100 };
   return { ...result, sha256: semanticHash(result) };
 }
@@ -124,11 +125,10 @@ function metadataConsumer(book) {
   return { write(chunk) { bytes += chunk.length; if (bytes > META_BYTES) fail('METADATA_LIMIT'); parser.write(chunk); chunks.push(chunk); }, finish() { parser.finish(); let body; try { body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks))); } catch { fail('METADATA_JSON'); } return { ...metadata(body, book), bytes }; } };
 }
 const read = file => JSON.parse(fs.readFileSync(file, 'utf8'));
-function atomic(file, data) {
-  // Leave a failed replacement intact as recovery evidence; never retry it.
-  const temp = file + '.new-' + crypto.randomUUID();
-  try { fs.writeFileSync(temp, JSON.stringify(data, null, 2), { flag: 'wx' }); fs.renameSync(temp, file); }
-  catch { fail('PERSISTENCE_STOP'); }
+function probeFile(dir, approval) {
+  const id = approval.probeAttempt;
+  if (id !== undefined && !/^[a-f0-9]{32}$/.test(id)) fail('PROBE_ATTEMPT_ID');
+  return path.join(dir, 'external-stream-live-probe' + (id ? '-' + id : '') + '.json');
 }
 function verifyApproval(approval, plan, ledger, phase = 'before') {
   if (approval?.status !== 'OWNER_APPROVED' || !approval.ownerApprovedAt || approval.manifest_sha256 !== plan.sha256 || approval.credential_scope !== 'https://www.googleapis.com/auth/spreadsheets.readonly' || approval.maxGoogleGets !== plan.pairedGets || approval.maxCloudExecutions !== 0) fail('EXPLICIT_EXTERNAL_APPROVAL_REQUIRED');
@@ -148,7 +148,7 @@ function verifyPreconditions(approval) {
   if (!g || g.status !== 'VERIFIED' || !/^[a-f0-9]{64}$/.test(g.client_sha256 || '') || g.granted_scope !== 'https://www.googleapis.com/auth/spreadsheets.readonly' || g.storage_verified !== true || g.costs_verified !== 'NO_ADDITIONAL_CHARGES' || g.source_writers_paused !== true || !Number.isFinite(g.quota_reads_per_user_minute) || g.quota_reads_per_user_minute < 30 || !Number.isFinite(g.quota_reads_per_project_minute) || g.quota_reads_per_project_minute < 30 || !g.checked_at || Date.now() - Date.parse(g.checked_at) < 0 || Date.now() - Date.parse(g.checked_at) > 60 * 60 * 1000 || !Number.isFinite(Date.parse(g.checked_at))) fail('PRE_EXECUTION_GATES_REQUIRED');
 }
 async function runProbe({ dir, books, approval, token, fetch = request }) {
-  const plan = manifest(books), file = path.join(dir, 'external-stream-live-probe.json'), ledgerFile = path.join(dir, 'continuation-ledger.json');
+  const plan = manifest(books), file = probeFile(dir, approval), ledgerFile = path.join(dir, 'continuation-ledger.json');
   verifyApproval(approval, plan, read(ledgerFile), 'probe'); verifyPreconditions(approval);
   if (!token) fail('CREDENTIAL_REQUIRED');
   if (fs.existsSync(file) || fs.existsSync(path.join(dir, 'external-stream-before-progress.json'))) fail('EXISTING_ATTEMPT_NO_RETRY');
@@ -156,8 +156,8 @@ async function runProbe({ dir, books, approval, token, fetch = request }) {
   const book = books[0], step = plan.datasets[0].requests.find(s => s.role === 'grid' && s.sheet === 'Arc Research');
   const probe = { status: 'PREPARED', manifest_sha256: plan.sha256, dataset: book.dataset_id, url_sha256: sha(step.url), grid: null, whole_phase_verified: false };
   try {
-    fs.writeFileSync(file, JSON.stringify(probe, null, 2), { flag: 'wx' });
-    const ledger = read(ledgerFile), receipt = { phase: 'external-live-probe', dataset: book.dataset_id, role: 'grid', sheet: step.sheet, at: new Date().toISOString(), status: 'DISPATCHED', url_sha256: probe.url_sha256 };
+    atomic(file, probe, true);
+    const ledger = read(ledgerFile), receipt = { phase: 'external-live-probe', probe_attempt: approval.probeAttempt, dataset: book.dataset_id, role: 'grid', sheet: step.sheet, at: new Date().toISOString(), status: 'DISPATCHED', url_sha256: probe.url_sha256 };
     ledger.consumption.sheetsGets++; (ledger.integrityRequests ||= []).push(receipt); atomic(ledgerFile, ledger); probe.status = 'DISPATCHED'; atomic(file, probe);
     try {
       probe.grid = await fetch(step.url, token, gridConsumer(null, book, step.sheet), step.maxBytes);
@@ -179,8 +179,8 @@ async function runPhase({ dir, phase, books, approval, token, fetch = request, p
   if (!['before', 'after'].includes(phase)) fail('PHASE');
   const plan = manifest(books), ledgerFile = path.join(dir, 'continuation-ledger.json'), progressFile = path.join(dir, 'external-stream-' + phase + '-progress.json'), outputFile = path.join(dir, 'external-stream-' + phase + '.json');
   if (fs.existsSync(progressFile) || fs.existsSync(outputFile)) fail('EXISTING_ATTEMPT_NO_RETRY');
-  const ledgerStart = read(ledgerFile), probe = read(path.join(dir, 'external-stream-live-probe.json'));
-  if (!ledgerStart.integrityRequests?.some(r => r.phase === 'external-live-probe' && r.status === 'HASHED' && r.dataset === probe.dataset && r.url_sha256 === probe.url_sha256 && r.bytes === probe.grid?.body_bytes)) fail('PROBE_ACCOUNTING_INCOMPLETE');
+  const ledgerStart = read(ledgerFile), probe = read(probeFile(dir, approval));
+  if (!ledgerStart.integrityRequests?.some(r => r.phase === 'external-live-probe' && r.probe_attempt === approval.probeAttempt && r.status === 'HASHED' && r.dataset === probe.dataset && r.url_sha256 === probe.url_sha256 && r.bytes === probe.grid?.body_bytes)) fail('PROBE_ACCOUNTING_INCOMPLETE');
   // BEFORE reuses exactly one reviewed GET, rather than exceeding the paired budget.
   verifyApproval(approval, plan, { ...ledgerStart, consumption: { ...ledgerStart.consumption, sheetsGets: ledgerStart.consumption.sheetsGets - (phase === 'before' ? 1 : 0) } }, phase); verifyPreconditions(approval); verifyProbe(probe, approval, plan); if (typeof token !== 'string' || !token) fail('CREDENTIAL_REQUIRED');
   const before = phase === 'after' ? read(path.join(dir, 'external-stream-before.json')) : null;
@@ -220,11 +220,11 @@ async function runPhase({ dir, phase, books, approval, token, fetch = request, p
     }
     const output = { ok: true, phase, method: plan.method, manifest_sha256: plan.sha256, books: progress.books, google_gets: progress.requests.length, cloud_executions: 0, source_writes: 0, research_writes: 0 };
     if (output.google_gets !== plan.onePhaseGets || output.books.length !== 3) fail('INCOMPLETE_PHASE');
-    fs.writeFileSync(outputFile, JSON.stringify(output, null, 2), { flag: 'wx' }); progress.status = 'VERIFIED'; atomic(progressFile, progress); return output;
+    atomic(outputFile, output, true); progress.status = 'VERIFIED'; atomic(progressFile, progress); return output;
   } catch (error) { progress.status = 'STOPPED'; progress.error = errorCode(error); try { atomic(progressFile, progress); } catch { fail('PERSISTENCE_STOP'); } throw Error(progress.error); }
   finally { fs.closeSync(lock); fs.unlinkSync(lockFile); }
 }
-module.exports = { META_FIELDS, GRID_FIELDS, META_BYTES, GRID_BYTES, TOKEN_BYTES, MAX_HEAP_BYTES, MAX_RSS_BYTES, apiUrl, manifest, metadata, gridConsumer, metadataConsumer, request, verifyApproval, verifyBefore, verifyPreconditions, verifyProbe, runProbe, runPhase };
+module.exports = { META_FIELDS, GRID_FIELDS, META_BYTES, GRID_BYTES, TOKEN_BYTES, MAX_HEAP_BYTES, MAX_RSS_BYTES, apiUrl, manifest, metadata, gridConsumer, metadataConsumer, request, verifyApproval, verifyBefore, verifyPreconditions, verifyProbe, probeFile, runProbe, runPhase };
 if (require.main === module) {
   const books = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config/datasets.json'))).datasets;
   if (process.argv[2] === '--run') {

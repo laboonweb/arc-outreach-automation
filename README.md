@@ -11,8 +11,8 @@ approved 8 MiB body limit. It returned the redacted failure
 testing stopped without retry. The isolated control was restored exactly, and
 fresh production and synthetic preservation checks passed. The unchanged local
 candidate has been rebuilt with all six hashes unchanged. Latest full local suite:
-456 passed, zero failed/skipped, including 25 external streaming integrity tests
-and 11 local OAuth/PKCE tests.
+463 passed, zero failed/skipped, including 26 external streaming integrity tests,
+12 local OAuth/PKCE tests and five receipt-persistence regressions.
 Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 7/14 integrity
 GET slots (six earlier GETs plus one retained pre-dispatch reservation).
 Complete paired source integrity remains blocked. The external, read-only
@@ -31,16 +31,25 @@ Chrome authorization succeeded: one token POST granted exactly Sheets read-only.
 The probe stopped with `INTEGRITY_EXTERNAL_PERSISTENCE_STOP` while replacing its
 counted pre-dispatch receipt, before calling the Google fetch. No live workbook
 response or usable probe receipt exists. The reservation remains counted, all
-failed files are preserved, and no retry or remaining GET ran. The exact Windows
-replacement error was not recorded; current file ACLs/attributes do not identify
-its cause. A local regression verifies this failure stage stops before fetch.
+failed files are preserved, and no retry or remaining GET ran. The original OS
+error was redacted. A separate local reproduction captured an EPERM replacement
+failure in the same private folder. The shared receipt writer now flushes and
+verifies bytes, retries only a bounded local sharing refusal, and stops on
+conflicts or ambiguous persistence. All 80 native writes passed in the normal
+and owner-restricted folders, recovering five temporary sharing refusals.
+The process responsible for those refusals remains unidentified.
 No Cloud execution ran during this correction. A successful probe uses one GET
 within the existing ceiling and pauses
 for review; complete BEFORE still requires paired capacity. Its grid is
-reused in BEFORE, preserving exactly 56 new GETs and the cumulative ceiling of 62.
+reused in BEFORE, preserving exactly 56 fresh GETs for complete paired coverage.
 Stage 2 and production publication remain on hold. The active cap remains 14;
 conservatively retaining this failed reservation would require ceiling 63 to
-complete a fresh probe plus its remaining 55 GETs. No extension is assumed.
+complete a fresh probe plus its remaining 55 GETs. The recovery also needs a
+fresh ordinary-Chrome consent because the earlier token was never saved.
+Four total token exchanges would cover the failed attempt, corrected probe and
+separately gated BEFORE/AFTER phases. Changes to those budgets await owner
+approval. The next executable scope is only one token POST and one Sheets GET,
+then a report; no Cloud execution or remaining integrity request is included.
 
 See the [compact remaining execution plan](docs/integrity-streaming-stage1-plan.md)
 and [preserved Cloud readiness evidence](docs/readiness-20261009.md).

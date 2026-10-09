@@ -2,6 +2,7 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 const crypto = require('node:crypto'), http = require('node:http'), fs = require('node:fs');
 const { EventEmitter } = require('node:events'), { Readable } = require('node:stream'), { execFileSync } = require('node:child_process');
+const os = require('node:os'), path = require('node:path');
 const oauth = require('../scripts/authorize-integrity-google');
 function client() { return { installed: { project_id: oauth.PROJECT, client_id: '123-syntheticclient.apps.googleusercontent.com', client_secret: 'synthetic-client-secret-local', auth_uri: 'https://accounts.google.com/o/oauth2/v2/auth', token_uri: 'https://oauth2.googleapis.com/token', redirect_uris: ['http://localhost'] } }; }
 function grant() { return { scope: oauth.SCOPE, access_token: 'synthetic-access-token-memory-only', token_type: 'Bearer', expires_in: 3600, refresh_token: 'synthetic-refresh-discarded' }; }
@@ -83,5 +84,13 @@ test('local authorization deadline stops without exchange or automatic browser o
 });
 test('default CLI is offline and live path exposes only the single-probe runner', () => {
   const output = JSON.parse(execFileSync(process.execPath, ['scripts/authorize-integrity-google.js'], { encoding: 'utf8' })); assert.equal(output.live_calls, 0); assert.equal(output.scope, oauth.SCOPE);
-  const source = fs.readFileSync('scripts/authorize-integrity-google.js', 'utf8'); assert.ok(source.includes('integrity.runProbe')); assert.ok(!source.includes('integrity.runPhase')); assert.ok(!source.includes('ARC_INTEGRITY_ACCESS_TOKEN')); assert.ok(!source.includes('launch(')); assert.ok(source.includes('owner-probe-authorization.json'));
+  const source = fs.readFileSync('scripts/authorize-integrity-google.js', 'utf8'); assert.ok(source.includes('integrity.runProbe')); assert.ok(!source.includes('integrity.runPhase')); assert.ok(!source.includes('ARC_INTEGRITY_ACCESS_TOKEN')); assert.ok(!source.includes('launch(')); assert.ok(source.includes("'owner-probe-authorization' + suffix"));
+});
+test('OAuth budget counts all preserved attempt receipts and rejects unexpected counts', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arc-integrity-oauth-synthetic-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'owner-probe-authorization.json'), JSON.stringify({ token_posts_dispatched: 1 })); assert.equal(oauth.verifyTokenBudget(dir, {}), 1);
+    const second = path.join(dir, 'owner-probe-authorization-' + '1'.repeat(32) + '.json'); fs.writeFileSync(second, JSON.stringify({ token_posts_dispatched: 1 })); assert.throws(() => oauth.verifyTokenBudget(dir, {}), /TOKEN_POST_BUDGET/); assert.equal(oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), 2); assert.throws(() => oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 5 }), /TOKEN_POST_BUDGET/);
+    fs.writeFileSync(second, JSON.stringify({ token_posts_dispatched: 'UNKNOWN' })); assert.throws(() => oauth.verifyTokenBudget(dir, { maxOAuthTokenPosts: 4 }), /TOKEN_POST_ACCOUNTING/);
+  } finally { if (path.dirname(path.resolve(dir)) !== path.resolve(os.tmpdir()) || !path.basename(dir).startsWith('arc-integrity-oauth-synthetic-')) throw Error('UNSAFE_CLEANUP'); fs.rmSync(dir, { recursive: true }); }
 });
