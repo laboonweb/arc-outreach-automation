@@ -45,7 +45,7 @@ function metadata(body, book) {
   return { body, sha256: semanticHash(body) };
 }
 function gridConsumer(meta, book, title) {
-  const expected = new Map(meta.body.sheets.map(s => [s.properties.title, s.properties])), sheets = new Map(); let id;
+  const expected = meta ? new Map(meta.body.sheets.map(s => [s.properties.title, s.properties])) : null, sheets = new Map(); let id;
   const parser = new JsonStream(event => {
     const p = event.path;
     if (event.type === 'scalar' && p.length === 1 && p[0] === 'spreadsheetId') id = event.value;
@@ -53,6 +53,7 @@ function gridConsumer(meta, book, title) {
     let s = sheets.get(p[1]); if (!s) { if (sheets.size >= 10) fail('TAB_LIMIT'); s = { properties: {}, blocks: new Map(), propertyHash: null }; sheets.set(p[1], s); }
     if (p[2] === 'properties') {
       if (event.type === 'scalar' && p.length === 4 && ['title', 'sheetId', 'sheetType'].includes(p[3])) s.properties[p[3]] = event.value;
+      if (event.type === 'scalar' && p.length === 5 && p[3] === 'gridProperties' && ['rowCount', 'columnCount'].includes(p[4])) (s.properties.gridProperties ||= {})[p[4]] = event.value;
       if (event.type === 'container' && p.length === 3) s.propertyHash = event.hash;
     }
     if (p[2] !== 'data' || !Number.isInteger(p[3])) return;
@@ -74,14 +75,15 @@ function gridConsumer(meta, book, title) {
       const actual = [...sheets.values()], matching = actual.filter(s => s.properties.title === title);
       if (matching.length !== 1 || new Set(actual.map(s => s.properties.title)).size !== actual.length) fail('GRID_SHEET_ASSOCIATION');
       for (const sheet of actual) {
-        const props = expected.get(sheet.properties.title);
-        if (!props || sheet.propertyHash !== semanticHash(props)) fail('GRID_METADATA_CHANGED');
+        const props = expected ? expected.get(sheet.properties.title) : sheet.properties, g = props?.gridProperties;
+        if (!props || !titles(book).includes(props.title) || !Number.isInteger(props.sheetId) || props.sheetId < 0 || (props.sheetType && props.sheetType !== 'GRID') || !g || !Number.isInteger(g.rowCount) || !Number.isInteger(g.columnCount) || g.rowCount < 1 || g.rowCount > MAX_ROWS || g.columnCount < 1 || g.columnCount > MAX_COLUMNS || (expected && sheet.propertyHash !== semanticHash(props))) fail('GRID_METADATA_CHANGED');
         if (sheet.properties.title !== title && sheet.blocks.size) fail('UNREQUESTED_GRID');
       }
-      const sheet = matching[0], props = expected.get(title), g = props.gridProperties, block = sheet.blocks.get(0);
+      if (new Set(actual.map(s => s.properties.sheetId)).size !== actual.length) fail('GRID_SHEET_ASSOCIATION');
+      const sheet = matching[0], props = expected ? expected.get(title) : sheet.properties, g = props.gridProperties, block = sheet.blocks.get(0);
       if (!block || sheet.blocks.size !== 1 || block.startRow !== 0 || block.startColumn !== 0 || block.rows > g.rowCount || block.maxValues > g.columnCount || block.rowMetadata > g.rowCount || block.columnMetadata > g.columnCount) fail('GRID_COVERAGE');
-      if (title === 'Arc Research' && HEADERS.some((header, index) => block.headers[index] !== header)) fail('RESEARCH_HEADERS_INCOMPLETE');
-      return { title, sheet_id: props.sheetId, rows: g.rowCount, columns: g.columnCount, requested_range: RANGE, complete_grid: true, required_research_columns: title === 'Arc Research' ? HEADERS.length : 0, sha256: digest.sha256, body_bytes: digest.bytes, parser: { peak_token_bytes: digest.peakTokenBytes, peak_depth: digest.peakDepth, peak_object_keys: digest.peakObjectKeys } };
+      if (title === 'Arc Research' && (g.columnCount < HEADERS.length || HEADERS.some((header, index) => block.headers[index] !== header))) fail('RESEARCH_HEADERS_INCOMPLETE');
+      return { title, sheet_id: props.sheetId, rows: g.rowCount, columns: g.columnCount, requested_range: RANGE, complete_grid: true, required_research_columns: title === 'Arc Research' ? HEADERS.length : 0, sha256: digest.sha256, body_bytes: digest.bytes, property_refs: actual.map(s => ({ title: s.properties.title, sheet_id: s.properties.sheetId, sha256: s.propertyHash })), parser: { peak_token_bytes: digest.peakTokenBytes, peak_depth: digest.peakDepth, peak_object_keys: digest.peakObjectKeys } };
     }
   };
 }
@@ -92,25 +94,25 @@ async function request(url, token, consumer, maxBytes, get = https.get) {
   if (target.origin !== 'https://sheets.googleapis.com' || target.username || target.password || target.hash || !/^\/v4\/spreadsheets\/[A-Za-z0-9_-]+$/.test(target.pathname)) fail('HOST_ALLOWLIST');
   if (typeof token !== 'string' || !token || /[\r\n]/.test(token)) fail('CREDENTIAL_REQUIRED');
   return new Promise((resolve, reject) => {
-    let done = false, timer;
+    let done = false, timer; const started = Date.now();
     const stop = code => { if (done) return; done = true; clearTimeout(timer); req.destroy(); reject(Error('INTEGRITY_EXTERNAL_' + code)); };
     const req = get(target, { method: 'GET', rejectUnauthorized: true, highWaterMark: 16384, headers: { Authorization: 'Bearer ' + token, 'Accept-Encoding': 'identity', Accept: 'application/json' } }, response => {
       if (response.statusCode !== 200) { response.destroy(); stop('HTTP_' + response.statusCode + '_STOP'); return; }
       if (!/^application\/json(?:;|$)/i.test(response.headers['content-type'] || '') || !['', 'identity'].includes(response.headers['content-encoding'] || '')) { response.destroy(); stop('CONTENT_ENCODING'); return; }
       const length = response.headers['content-length'];
       if (length !== undefined && (!/^\d+$/.test(String(length)) || Number(length) > maxBytes)) { response.destroy(); stop('BODY_LIMIT'); return; }
-      let bytes = 0;
+      let bytes = 0, chunks = 0, peakHeap = 0, peakRss = 0;
       response.on('data', chunk => {
-        if (done) return; bytes += chunk.length;
+        if (done) return; bytes += chunk.length; chunks++;
         if (bytes > maxBytes) { response.destroy(); stop('BODY_LIMIT'); return; }
-        try { const usage = process.memoryUsage(); if (usage.heapUsed > MAX_HEAP_BYTES || usage.rss > MAX_RSS_BYTES) fail('MEMORY_LIMIT'); consumer.write(chunk); } catch (error) { response.destroy(); if (!done) { done = true; clearTimeout(timer); req.destroy(); reject(Error(errorCode(error))); } }
+        try { const usage = process.memoryUsage(); peakHeap = Math.max(peakHeap, usage.heapUsed); peakRss = Math.max(peakRss, usage.rss); if (peakHeap > MAX_HEAP_BYTES || peakRss > MAX_RSS_BYTES) fail('MEMORY_LIMIT'); consumer.write(chunk); } catch (error) { response.destroy(); if (!done) { done = true; clearTimeout(timer); req.destroy(); reject(Error(errorCode(error))); } }
       });
       response.on('error', () => stop('TRANSPORT_STOP'));
       response.on('aborted', () => stop('TRUNCATED'));
       response.on('end', () => {
         if (done) return;
         if (response.complete === false || (length !== undefined && bytes !== Number(length))) { stop('TRUNCATED'); return; }
-        try { const receipt = consumer.finish(); done = true; clearTimeout(timer); resolve(receipt); } catch (error) { done = true; clearTimeout(timer); req.destroy(); reject(Error(errorCode(error))); }
+        try { const receipt = consumer.finish(); done = true; clearTimeout(timer); resolve({ ...receipt, transport: { bytes, chunks, elapsed_ms: Date.now() - started, peak_heap_bytes: peakHeap, peak_rss_bytes: peakRss, status: 200, identity_encoding: true, complete: true } }); } catch (error) { done = true; clearTimeout(timer); req.destroy(); reject(Error(errorCode(error))); }
       });
     });
     timer = setTimeout(() => stop('TIMEOUT_NO_RETRY'), 60000);
@@ -141,11 +143,46 @@ function verifyBefore(receipt, progress, plan) {
     if (book.sha256 !== hash) fail('BEFORE_INCOMPLETE');
   }
 }
+function verifyPreconditions(approval) {
+  const g = approval?.preExecutionGates;
+  if (!g || g.status !== 'VERIFIED' || !/^[a-f0-9]{64}$/.test(g.client_sha256 || '') || g.granted_scope !== 'https://www.googleapis.com/auth/spreadsheets.readonly' || g.storage_verified !== true || g.costs_verified !== 'NO_ADDITIONAL_CHARGES' || g.source_writers_paused !== true || !Number.isFinite(g.quota_reads_per_user_minute) || g.quota_reads_per_user_minute < 30 || !Number.isFinite(g.quota_reads_per_project_minute) || g.quota_reads_per_project_minute < 30 || !g.checked_at || Date.now() - Date.parse(g.checked_at) < 0 || Date.now() - Date.parse(g.checked_at) > 60 * 60 * 1000 || !Number.isFinite(Date.parse(g.checked_at))) fail('PRE_EXECUTION_GATES_REQUIRED');
+}
+async function runProbe({ dir, books, approval, token, fetch = request }) {
+  const plan = manifest(books), file = path.join(dir, 'external-stream-live-probe.json'), ledgerFile = path.join(dir, 'continuation-ledger.json');
+  verifyApproval(approval, plan, read(ledgerFile)); verifyPreconditions(approval);
+  if (!token) fail('CREDENTIAL_REQUIRED');
+  if (fs.existsSync(file) || fs.existsSync(path.join(dir, 'external-stream-before-progress.json'))) fail('EXISTING_ATTEMPT_NO_RETRY');
+  const lockFile = path.join(dir, 'external-stream.lock'), lock = fs.openSync(lockFile, 'wx');
+  const book = books[0], step = plan.datasets[0].requests.find(s => s.role === 'grid' && s.sheet === 'Arc Research');
+  const probe = { status: 'PREPARED', manifest_sha256: plan.sha256, dataset: book.dataset_id, url_sha256: sha(step.url), grid: null, whole_phase_verified: false };
+  try {
+    fs.writeFileSync(file, JSON.stringify(probe, null, 2), { flag: 'wx' });
+    const ledger = read(ledgerFile), receipt = { phase: 'external-live-probe', dataset: book.dataset_id, role: 'grid', sheet: step.sheet, at: new Date().toISOString(), status: 'DISPATCHED', url_sha256: probe.url_sha256 };
+    ledger.consumption.sheetsGets++; (ledger.integrityRequests ||= []).push(receipt); atomic(ledgerFile, ledger); probe.status = 'DISPATCHED'; atomic(file, probe);
+    try {
+      probe.grid = await fetch(step.url, token, gridConsumer(null, book, step.sheet), step.maxBytes);
+      probe.grid_sha256 = semanticHash(probe.grid); probe.status = 'AWAITING_REVIEW'; receipt.status = 'HASHED'; receipt.bytes = probe.grid.body_bytes;
+    } catch (error) { probe.status = 'STOPPED'; probe.error = receipt.error = errorCode(error); receipt.status = 'FAILED_STOPPED'; atomic(ledgerFile, ledger); throw error; }
+    atomic(ledgerFile, ledger); atomic(file, probe); return probe;
+  } catch (error) { probe.status = 'STOPPED'; probe.error = errorCode(error); try { atomic(file, probe); } catch { fail('PERSISTENCE_STOP'); } throw Error(probe.error); }
+  finally { fs.closeSync(lock); fs.unlinkSync(lockFile); }
+}
+function verifyProbe(probe, approval, plan) {
+  const t = probe?.grid?.transport;
+  if (probe?.status !== 'AWAITING_REVIEW' || probe.manifest_sha256 !== plan.sha256 || probe.dataset !== plan.datasets[0].dataset || probe.grid_sha256 !== semanticHash(probe.grid) || probe.grid?.title !== 'Arc Research' || !probe.grid.complete_grid || probe.grid.required_research_columns !== HEADERS.length || !t?.complete || t.status !== 200 || t.identity_encoding !== true || !['bytes', 'chunks', 'elapsed_ms', 'peak_heap_bytes', 'peak_rss_bytes'].every(k => Number.isFinite(t[k]) && t[k] >= 0) || !Number.isInteger(t.chunks) || t.bytes !== probe.grid.body_bytes || t.bytes < 1 || t.bytes > GRID_BYTES || t.chunks < 1 || t.elapsed_ms >= 60000 || t.peak_heap_bytes > MAX_HEAP_BYTES || t.peak_rss_bytes > MAX_RSS_BYTES || approval.liveProbeReviewedSha256 !== semanticHash(probe)) fail('LIVE_PROBE_REVIEW_REQUIRED');
+}
+function probeMetadata(probe, start) {
+  if (!Array.isArray(probe.grid.property_refs) || !probe.grid.property_refs.length) fail('PROBE_METADATA_CHANGED');
+  for (const p of probe.grid.property_refs) { const actual = start.body.sheets.find(s => s.properties.title === p.title)?.properties; if (!actual || actual.sheetId !== p.sheet_id || semanticHash(actual) !== p.sha256) fail('PROBE_METADATA_CHANGED'); }
+}
 async function runPhase({ dir, phase, books, approval, token, fetch = request, pause = ms => new Promise(r => setTimeout(r, ms)) }) {
   if (!['before', 'after'].includes(phase)) fail('PHASE');
   const plan = manifest(books), ledgerFile = path.join(dir, 'continuation-ledger.json'), progressFile = path.join(dir, 'external-stream-' + phase + '-progress.json'), outputFile = path.join(dir, 'external-stream-' + phase + '.json');
   if (fs.existsSync(progressFile) || fs.existsSync(outputFile)) fail('EXISTING_ATTEMPT_NO_RETRY');
-  verifyApproval(approval, plan, read(ledgerFile), phase); if (typeof token !== 'string' || !token) fail('CREDENTIAL_REQUIRED');
+  const ledgerStart = read(ledgerFile), probe = read(path.join(dir, 'external-stream-live-probe.json'));
+  if (!ledgerStart.integrityRequests?.some(r => r.phase === 'external-live-probe' && r.status === 'HASHED' && r.dataset === probe.dataset && r.url_sha256 === probe.url_sha256 && r.bytes === probe.grid?.body_bytes)) fail('PROBE_ACCOUNTING_INCOMPLETE');
+  // BEFORE reuses exactly one reviewed GET, rather than exceeding the paired budget.
+  verifyApproval(approval, plan, { ...ledgerStart, consumption: { ...ledgerStart.consumption, sheetsGets: ledgerStart.consumption.sheetsGets - (phase === 'before' ? 1 : 0) } }, phase); verifyPreconditions(approval); verifyProbe(probe, approval, plan); if (typeof token !== 'string' || !token) fail('CREDENTIAL_REQUIRED');
   const before = phase === 'after' ? read(path.join(dir, 'external-stream-before.json')) : null;
   if (before) verifyBefore(before, read(path.join(dir, 'external-stream-before-progress.json')), plan);
   const lockFile = path.join(dir, 'external-stream.lock'), lock = fs.openSync(lockFile, 'wx');
@@ -155,6 +192,10 @@ async function runPhase({ dir, phase, books, approval, token, fetch = request, p
     for (let i = 0; i < books.length; i++) {
       const book = books[i], spec = plan.datasets[i]; let start; const grids = [];
       for (const step of spec.requests) {
+        if (phase === 'before' && i === 0 && step.role === 'grid' && step.sheet === 'Arc Research') {
+          probeMetadata(probe, start);
+          grids.push(probe.grid); progress.requests.push({ status: 'REUSED_REVIEWED_PROBE', dataset: book.dataset_id, role: step.role, sheet: step.sheet, bytes: probe.grid.body_bytes }); atomic(progressFile, progress); continue;
+        }
         const delay = Math.max(0, plan.minimumStartIntervalMs - (Date.now() - lastStart)); if (delay) await pause(delay);
         const ledger = read(ledgerFile); if (ledger.consumption.sheetsGets >= ledger.caps.sheetsGets) fail('REQUEST_BUDGET');
         const receipt = { phase: 'external-stream-' + phase, dataset: book.dataset_id, role: step.role, sheet: step.sheet, at: new Date().toISOString(), status: 'DISPATCHED', url_sha256: sha(step.url) };
@@ -162,7 +203,7 @@ async function runPhase({ dir, phase, books, approval, token, fetch = request, p
         progress.status = 'DISPATCHED'; progress.requests.push(receipt); atomic(progressFile, progress); lastStart = Date.now();
         try {
           const result = await fetch(step.url, token, step.role === 'grid' ? gridConsumer(start, book, step.sheet) : metadataConsumer(book), step.maxBytes);
-          if (step.role === 'metadata-start') start = result;
+          if (step.role === 'metadata-start') { start = result; if (phase === 'before' && i === 0) probeMetadata(probe, start); }
           else if (step.role === 'grid') grids.push(result);
           else if (result.sha256 !== start.sha256) fail('METADATA_CHANGED_DURING_READ');
           receipt.status = 'HASHED'; receipt.bytes = result.body_bytes ?? result.bytes;
@@ -183,11 +224,12 @@ async function runPhase({ dir, phase, books, approval, token, fetch = request, p
   } catch (error) { progress.status = 'STOPPED'; progress.error = errorCode(error); try { atomic(progressFile, progress); } catch { fail('PERSISTENCE_STOP'); } throw Error(progress.error); }
   finally { fs.closeSync(lock); fs.unlinkSync(lockFile); }
 }
-module.exports = { META_FIELDS, GRID_FIELDS, META_BYTES, GRID_BYTES, TOKEN_BYTES, MAX_HEAP_BYTES, MAX_RSS_BYTES, apiUrl, manifest, metadata, gridConsumer, metadataConsumer, request, verifyApproval, verifyBefore, runPhase };
+module.exports = { META_FIELDS, GRID_FIELDS, META_BYTES, GRID_BYTES, TOKEN_BYTES, MAX_HEAP_BYTES, MAX_RSS_BYTES, apiUrl, manifest, metadata, gridConsumer, metadataConsumer, request, verifyApproval, verifyBefore, verifyPreconditions, verifyProbe, runProbe, runPhase };
 if (require.main === module) {
   const books = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config/datasets.json'))).datasets;
   if (process.argv[2] === '--run') {
     const dir = path.resolve(__dirname, '../private/operator-stage1'), token = process.env.ARC_INTEGRITY_ACCESS_TOKEN; delete process.env.ARC_INTEGRITY_ACCESS_TOKEN;
-    runPhase({ dir, phase: process.argv[3], books, token, approval: read(path.join(dir, 'external-stream-approval.json')) }).then(v => console.log(JSON.stringify({ ok: v.ok, phase: v.phase, books: v.books.length, google_gets: v.google_gets }))).catch(e => { console.error(errorCode(e)); process.exitCode = 1; });
+    const options = { dir, phase: process.argv[3], books, token, approval: read(path.join(dir, 'external-stream-approval.json')) };
+    (process.argv[3] === 'probe' ? runProbe(options) : runPhase(options)).then(v => console.log(JSON.stringify({ ok: v.ok, phase: v.phase, status: v.status, books: v.books?.length, google_gets: v.google_gets ?? 1 }))).catch(e => { console.error(errorCode(e)); process.exitCode = 1; });
   } else { const p = manifest(books); console.log(JSON.stringify({ method: p.method, manifest_sha256: p.sha256, books: p.datasets.map(d => ({ dataset: d.dataset, sheets: d.sheets.length, gets_per_phase: d.requests.length })), gets_before: p.onePhaseGets, gets_after: p.onePhaseGets, cloud_executions: 0, credentials_needed: 'New owner-approved local read-only OAuth access token; no n8n credential extraction', live_calls: 0 }, null, 2)); }
 }

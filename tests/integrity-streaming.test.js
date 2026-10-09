@@ -61,23 +61,24 @@ test('metadata byte cap and partial or duplicate JSON never certify metadata', (
   const c = v.metadataConsumer(books[0]); assert.throws(() => c.write(Buffer.alloc(v.META_BYTES + 1)), /METADATA_LIMIT/);
   const partial = v.metadataConsumer(books[0]); partial.write(Buffer.from('{"spreadsheetId":')); assert.throws(() => partial.finish(), /TRUNCATED/);
 });
-function approval(plan) { return { status: 'OWNER_APPROVED', ownerApprovedAt: '2026-10-09T00:00:00Z', manifest_sha256: plan.sha256, credential_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', maxGoogleGets: plan.pairedGets, maxCloudExecutions: 0 }; }
+function approval(plan) { return { status: 'OWNER_APPROVED', ownerApprovedAt: '2026-10-09T00:00:00Z', manifest_sha256: plan.sha256, credential_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', maxGoogleGets: plan.pairedGets, maxCloudExecutions: 0, preExecutionGates: { status: 'VERIFIED', checked_at: new Date().toISOString(), client_sha256: 'a'.repeat(64), granted_scope: 'https://www.googleapis.com/auth/spreadsheets.readonly', storage_verified: true, costs_verified: 'NO_ADDITIONAL_CHARGES', source_writers_paused: true, quota_reads_per_user_minute: 60, quota_reads_per_project_minute: 300 } }; }
 function temporary() { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arc-integrity-synthetic-')); fs.writeFileSync(path.join(dir, 'continuation-ledger.json'), JSON.stringify({ caps: { sheetsGets: 100 }, consumption: { sheetsGets: 6, executions: 43, rowMutations: 134 } })); return dir; }
 function cleanup(dir) { const target = path.resolve(dir); if (path.dirname(target) !== path.resolve(os.tmpdir()) || !path.basename(target).startsWith('arc-integrity-synthetic-')) throw Error('UNSAFE_SYNTHETIC_TEST_CLEANUP'); fs.rmSync(target, { recursive: true }); }
-function simulatedFetch({ corruptEnd = false, changedCell = false, failureAt = 0 } = {}) { let calls = 0; return { get calls() { return calls; }, async fetch(url, token, c) { calls++; if (calls === failureAt) throw Error('INTEGRITY_EXTERNAL_HTTP_401_STOP'); const u = new URL(url), book = books.find(b => u.pathname.endsWith('/' + b.spreadsheet_id)), range = u.searchParams.get('ranges'), body = range ? grid(book, range.match(/^'(.+)'!/)[1]) : meta(book); if (corruptEnd && calls === 4) body.properties.title = 'SYNTHETIC changed during read'; if (range && changedCell) body.sheets[0].data[0].rowData[1].values[0].note = 'SYNTHETIC changed between phases'; const bytes = Buffer.from(JSON.stringify(body)); for (let i = 0; i < bytes.length; i += 71) c.write(bytes.subarray(i, i + 71)); return c.finish(); } }; }
+function simulatedFetch({ corruptEnd = false, changedCell = false, failureAt = 0 } = {}) { let calls = 0; return { get calls() { return calls; }, async fetch(url, token, c) { calls++; if (calls === failureAt) throw Error('INTEGRITY_EXTERNAL_HTTP_401_STOP'); const u = new URL(url), book = books.find(b => u.pathname.endsWith('/' + b.spreadsheet_id)), range = u.searchParams.get('ranges'), body = range ? grid(book, range.match(/^'(.+)'!/)[1]) : meta(book); if (corruptEnd && calls === 4) body.properties.title = 'SYNTHETIC changed during read'; if (range && changedCell) body.sheets[0].data[0].rowData[1].values[0].note = 'SYNTHETIC changed between phases'; const bytes = Buffer.from(JSON.stringify(body)); for (let i = 0; i < bytes.length; i += 71) c.write(bytes.subarray(i, i + 71)); return { ...c.finish(), transport: { bytes: bytes.length, chunks: Math.ceil(bytes.length / 71), elapsed_ms: 20, peak_heap_bytes: 1000000, peak_rss_bytes: 1000000, status: 200, identity_encoding: true, complete: true } }; } }; }
+async function reviewedProbe(dir, plan, f) { const a = approval(plan), probe = await v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch }); a.liveProbeReviewedSha256 = semanticHash(probe); return a; }
 test('before/after receipts certify all three complete books, preserve accounting and retain no cell contents', async () => {
   const dir = temporary(), plan = v.manifest(books), f = simulatedFetch();
-  try { const before = await v.runPhase({ dir, phase: 'before', books, approval: approval(plan), token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }); assert.equal(before.google_gets, 12); assert.equal(before.books.length, 3); assert.ok(!JSON.stringify(before).includes('SYNTHETIC observation')); const after = await v.runPhase({ dir, phase: 'after', books, approval: approval(plan), token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }); assert.equal(after.ok, true); const ledger = JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))); assert.deepEqual(ledger.consumption, { sheetsGets: 30, executions: 43, rowMutations: 134 }); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: approval(plan), token: 'synthetic-token', fetch: f.fetch }), /EXISTING_ATTEMPT/); assert.equal(f.calls, 24); }
+  try { const a = await reviewedProbe(dir, plan, f), before = await v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }); assert.equal(before.google_gets, 12); assert.equal(before.books.length, 3); assert.ok(!JSON.stringify(before).includes('SYNTHETIC observation')); const after = await v.runPhase({ dir, phase: 'after', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }); assert.equal(after.ok, true); const ledger = JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))); assert.deepEqual(ledger.consumption, { sheetsGets: 30, executions: 43, rowMutations: 134 }); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /EXISTING_ATTEMPT/); assert.equal(f.calls, 24); }
   finally { cleanup(dir); }
 });
 test('failure counts the request, stops without a baseline, and forbids resuming or silently retrying', async () => {
   const dir = temporary(), plan = v.manifest(books), f = simulatedFetch({ failureAt: 2 });
-  try { await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: approval(plan), token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }), /HTTP_401/); assert.equal(f.calls, 2); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false); const progress = JSON.parse(fs.readFileSync(path.join(dir, 'external-stream-before-progress.json'))); assert.equal(progress.status, 'STOPPED'); assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))).consumption.sheetsGets, 8); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: approval(plan), token: 'synthetic-token', fetch: f.fetch }), /EXISTING_ATTEMPT/); assert.equal(f.calls, 2); }
+  try { const a = await reviewedProbe(dir, plan, f); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }), /HTTP_401/); assert.equal(f.calls, 2); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false); const progress = JSON.parse(fs.readFileSync(path.join(dir, 'external-stream-before-progress.json'))); assert.equal(progress.status, 'STOPPED'); assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))).consumption.sheetsGets, 8); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /EXISTING_ATTEMPT/); assert.equal(f.calls, 2); }
   finally { cleanup(dir); }
 });
 test('metadata drift within a read, missing approval and insufficient paired budget stop before certification', async () => {
   const p = v.manifest(books); assert.throws(() => v.verifyApproval({}, p, { caps: { sheetsGets: 100 }, consumption: { sheetsGets: 6 } }), /APPROVAL/); assert.throws(() => v.verifyApproval(approval(p), p, { caps: { sheetsGets: 20 }, consumption: { sheetsGets: 6 } }), /BUDGET/);
-  const dir = temporary(), f = simulatedFetch({ corruptEnd: true }); try { await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: approval(p), token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }), /METADATA_CHANGED/); assert.equal(f.calls, 4); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false); } finally { cleanup(dir); }
+  const dir = temporary(), f = simulatedFetch({ corruptEnd: true }); try { const a = await reviewedProbe(dir, p, f); await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }), /METADATA_CHANGED/); assert.equal(f.calls, 4); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false); } finally { cleanup(dir); }
 });
 test('full metadata mask covers current root/sheet fields, comments and every metadata change', () => {
   for (const field of ['spreadsheetUrl', 'properties', 'namedRanges', 'developerMetadata', 'dataSources', 'dataSourceSchedules', 'comments', 'commentsViewMode', 'merges', 'conditionalFormats', 'filterViews', 'protectedRanges', 'basicFilter', 'charts', 'bandedRanges', 'rowGroups', 'columnGroups', 'slicers', 'tables', 'commentAnchors']) assert.ok(v.META_FIELDS.includes(field));
@@ -91,8 +92,70 @@ test('malformed optional arrays cannot be mistaken for sparse empty data', () =>
 test('streaming transport processes a real 208-column fixture above 8 MiB without assembling it', async () => {
   const demo = require('../scripts/demo-streaming-integrity'); let wireBytes = 0;
   const get = (url, options, callback) => { const req = new EventEmitter(); req.destroy = () => {}; queueMicrotask(() => { const response = Readable.from((function* () { for (const row of demo.stream(150)) for (let i = 0; i < row.length; i += 16384) { const chunk = row.subarray(i, i + 16384); wireBytes += chunk.length; yield chunk; } })()); response.statusCode = 200; response.headers = { 'content-type': 'application/json' }; response.complete = true; callback(response); }); return req; };
-  const result = await v.request(v.apiUrl(demo.book, 'Arc Research'), 'synthetic-token', v.gridConsumer(v.metadata(demo.metadata(150), demo.book), demo.book, 'Arc Research'), v.GRID_BYTES, get);
+  const result = await v.request(v.apiUrl(demo.book, 'Arc Research'), 'synthetic-token', v.gridConsumer(null, demo.book, 'Arc Research'), v.GRID_BYTES, get);
   assert.ok(wireBytes > 8 * 1024 * 1024); assert.equal(result.body_bytes, wireBytes); assert.equal(result.complete_grid, true); assert.equal(result.required_research_columns, 208);
+  assert.equal(result.transport.bytes, wireBytes); assert.ok(result.transport.chunks > 1); assert.equal(result.transport.complete, true);
+});
+
+test('one bounded probe stops for review, is counted once and fits the exact paired budget', async () => {
+  const dir = temporary(), plan = v.manifest(books), f = simulatedFetch(), a = approval(plan);
+  fs.writeFileSync(path.join(dir, 'continuation-ledger.json'), JSON.stringify({ caps: { sheetsGets: 6 + plan.pairedGets }, consumption: { sheetsGets: 6, executions: 43, rowMutations: 134 } }));
+  try {
+    const probe = await v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch });
+    assert.equal(f.calls, 1); assert.equal(probe.status, 'AWAITING_REVIEW'); assert.equal(probe.whole_phase_verified, false); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false);
+    await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /LIVE_PROBE_REVIEW_REQUIRED/); assert.equal(f.calls, 1);
+    await assert.rejects(v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /REQUEST_BUDGET|EXISTING_ATTEMPT/); assert.equal(f.calls, 1);
+    a.liveProbeReviewedSha256 = semanticHash(probe);
+    await v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} });
+    await v.runPhase({ dir, phase: 'after', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} });
+    assert.equal(f.calls, plan.pairedGets); assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))).consumption.sheetsGets, 6 + plan.pairedGets);
+  } finally { cleanup(dir); }
+});
+
+test('missing, stale, excessive scope, quota, storage, cost or source-pause gates block the first request', async () => {
+  const dir = temporary(), plan = v.manifest(books), f = simulatedFetch();
+  try {
+    for (const mutate of [a => delete a.preExecutionGates, a => a.preExecutionGates.checked_at = 'invalid', a => a.preExecutionGates.checked_at = '2000-01-01', a => a.preExecutionGates.granted_scope += ' https://www.googleapis.com/auth/drive', a => a.preExecutionGates.quota_reads_per_user_minute = 29, a => a.preExecutionGates.storage_verified = false, a => a.preExecutionGates.costs_verified = 'UNKNOWN', a => a.preExecutionGates.source_writers_paused = false]) {
+      const a = approval(plan); mutate(a); await assert.rejects(v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /PRE_EXECUTION_GATES_REQUIRED/);
+    }
+    assert.equal(f.calls, 0); assert.equal(fs.existsSync(path.join(dir, 'external-stream-live-probe.json')), false);
+  } finally { cleanup(dir); }
+});
+
+test('failed or altered probe cannot authorize continuation, retry or a partial phase receipt', async () => {
+  const dir = temporary(), plan = v.manifest(books), f = simulatedFetch({ failureAt: 1 }), a = approval(plan);
+  try {
+    await assert.rejects(v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /HTTP_401/);
+    const probe = JSON.parse(fs.readFileSync(path.join(dir, 'external-stream-live-probe.json'))); assert.equal(probe.status, 'STOPPED'); assert.equal(f.calls, 1);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'continuation-ledger.json'))).consumption.sheetsGets, 7);
+    await assert.rejects(v.runProbe({ dir, books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /EXISTING_ATTEMPT/);
+    await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch }), /PROBE_ACCOUNTING/); assert.equal(f.calls, 1);
+  } finally { cleanup(dir); }
+  const clean = temporary(), good = simulatedFetch();
+  try {
+    const approved = await reviewedProbe(clean, plan, good), probe = JSON.parse(fs.readFileSync(path.join(clean, 'external-stream-live-probe.json')));
+    for (const mutate of [p => p.grid.sha256 = '0'.repeat(64), p => p.grid.transport.bytes++, p => p.grid.required_research_columns = 207, p => p.grid.transport.elapsed_ms = 60000, p => p.grid.transport.peak_rss_bytes = v.MAX_RSS_BYTES + 1]) { const changed = structuredClone(probe); mutate(changed); assert.throws(() => v.verifyProbe(changed, approved, plan), /LIVE_PROBE_REVIEW/); }
+  } finally { cleanup(clean); }
+});
+
+test('probe property drift stops after the first metadata read without repeating the grid', async () => {
+  const dir = temporary(), plan = v.manifest(books), f = simulatedFetch();
+  try {
+    const a = await reviewedProbe(dir, plan, f); let calls = 0;
+    const fetch = async (url, token, c) => { calls++; const body = meta(books[0]); body.sheets[1].properties.gridProperties.rowCount--; c.write(Buffer.from(JSON.stringify(body))); return c.finish(); };
+    await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch, pause: async () => {} }), /PROBE_METADATA_CHANGED/);
+    assert.equal(calls, 1); assert.equal(f.calls, 1); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false);
+  } finally { cleanup(dir); }
+});
+
+test('the actual 60-second transport timeout aborts once and never finishes the consumer', async () => {
+  const original = global.setTimeout; let calls = 0, destroyed = 0, finished = false;
+  try {
+    global.setTimeout = (callback, ms) => { assert.equal(ms, 60000); return original(callback, 5); };
+    const get = () => { calls++; const req = new EventEmitter(); req.destroy = () => destroyed++; return req; };
+    await assert.rejects(v.request(v.apiUrl(books[0]), 'synthetic-token', { write() {}, finish() { finished = true; } }, v.META_BYTES, get), /TIMEOUT_NO_RETRY/);
+    assert.equal(calls, 1); assert.equal(destroyed, 1); assert.equal(finished, false);
+  } finally { global.setTimeout = original; }
 });
 test('external 64 MiB wire cap aborts before completion and memory guard rejects before consumption', async () => {
   let written = 0, finished = false;
@@ -103,14 +166,14 @@ test('external 64 MiB wire cap aborts before completion and memory guard rejects
 });
 test('AFTER stops on content mismatch and incomplete or persistence-ambiguous BEFORE evidence', async () => {
   const dir = temporary(), plan = v.manifest(books), f = simulatedFetch();
-  try { const before = await v.runPhase({ dir, phase: 'before', books, approval: approval(plan), token: 'synthetic-token', fetch: f.fetch, pause: async () => {} });
+  try { const a = await reviewedProbe(dir, plan, f), before = await v.runPhase({ dir, phase: 'before', books, approval: a, token: 'synthetic-token', fetch: f.fetch, pause: async () => {} });
     for (const mutate of [b => b.google_gets--, b => b.books[0].grids.pop(), b => b.books[0].grids[0].sha256 = '0'.repeat(64)]) { const b = structuredClone(before); mutate(b); assert.throws(() => v.verifyBefore(b, { status: 'VERIFIED' }, plan), /BEFORE_INCOMPLETE/); }
     assert.throws(() => v.verifyBefore(before, { status: 'STOPPED' }, plan), /BEFORE_INCOMPLETE/);
-    const changed = simulatedFetch({ changedCell: true }); await assert.rejects(v.runPhase({ dir, phase: 'after', books, approval: approval(plan), token: 'synthetic-token', fetch: changed.fetch, pause: async () => {} }), /SOURCE_CONTENT_CHANGED/); assert.equal(changed.calls, 4); assert.equal(fs.existsSync(path.join(dir, 'external-stream-after.json')), false);
+    const changed = simulatedFetch({ changedCell: true }); await assert.rejects(v.runPhase({ dir, phase: 'after', books, approval: a, token: 'synthetic-token', fetch: changed.fetch, pause: async () => {} }), /SOURCE_CONTENT_CHANGED/); assert.equal(changed.calls, 4); assert.equal(fs.existsSync(path.join(dir, 'external-stream-after.json')), false);
   } finally { cleanup(dir); }
 });
 test('local persistence failure stops before a Google dispatch and preserves earlier evidence', async () => {
   const dir = temporary(), original = fs.renameSync, f = simulatedFetch(); fs.writeFileSync(path.join(dir, 'previous-recovery-proof.json'), 'SYNTHETIC preserved');
-  try { fs.renameSync = () => { throw Error('synthetic persistence failure'); }; await assert.rejects(v.runPhase({ dir, phase: 'before', books, approval: approval(v.manifest(books)), token: 'synthetic-token', fetch: f.fetch, pause: async () => {} }), /PERSISTENCE_STOP/); assert.equal(f.calls, 0); assert.equal(fs.readFileSync(path.join(dir, 'previous-recovery-proof.json'), 'utf8'), 'SYNTHETIC preserved'); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false); }
+  try { fs.renameSync = () => { throw Error('synthetic persistence failure'); }; await assert.rejects(v.runProbe({ dir, books, approval: approval(v.manifest(books)), token: 'synthetic-token', fetch: f.fetch }), /PERSISTENCE_STOP/); assert.equal(f.calls, 0); assert.equal(fs.readFileSync(path.join(dir, 'previous-recovery-proof.json'), 'utf8'), 'SYNTHETIC preserved'); assert.equal(fs.existsSync(path.join(dir, 'external-stream-before.json')), false); }
   finally { fs.renameSync = original; cleanup(dir); }
 });

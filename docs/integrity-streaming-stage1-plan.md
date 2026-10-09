@@ -1,8 +1,10 @@
 # Remaining Stage 1 execution plan, 9 October 2026
 
-**Local proof passed; external access and a revised GET ceiling await approval.
-Stage 1 and production release remain blocked.** No Cloud execution, Google data
-request, provider operation or production change ran during this correction.
+**Local proof passed; the external method and cumulative ceiling of 62 are
+conditionally approved. Credential, stability and live-probe gates remain
+incomplete. Stage 1 and production release remain blocked.** No Cloud execution,
+Google data request, provider operation or production change ran during this
+correction.
 The previously reviewed develop commits were pushed through `6a80b5e` first;
 main remains `b187df8`. Git does not deploy n8n.
 
@@ -26,8 +28,10 @@ AFTER and compare every workbook hash with BEFORE. Known coverage is:
 
 The private, fixed URL manifest is
 `private/operator-stage1/external-stream-request-manifest-20261009.json`.
-Its hash is `432f58f720f331f264ce8c1850a9922db914ad326396063e7bdc24324afd4453`.
-It pins the runner, parser and actual 208-column schema. Each grid request names
+The original manifest is preserved. The single-probe revision is saved separately
+as `external-stream-gated-manifest-20261009.json`; the default offline command
+prints its digest. Pin that digest in the private approval file. It pins the
+runner, parser and actual 208-column schema. Each grid request names
 one registered sheet and A1:IV5000. Metadata must establish that this covers its
 entire allocated grid, including blank formatted cells. Unknown/missing sheets,
 non-grid sheets, grids above 5,000 rows or 256 columns, changed sheet associations,
@@ -64,14 +68,14 @@ there is no automatic exemption or retry.
 
 | Item | Fixed plan |
 |---|---|
-| Sheets data requests | 56 new GETs; six previously consumed means **62 cumulative**, requiring ceiling 14 -> 62 |
+| Sheets data requests | 56 new GETs; six previously consumed means **62 cumulative**, conditionally approved ceiling 14 -> 62 |
 | n8n executions / source writes for integrity | 0 / 0 |
 | Response limits | 1 MiB buffered metadata; 64 MiB streamed per sheet, identity encoding only |
 | Parser limits | 16 KiB decoder input; token 1 MiB, depth 32, 128 keys/object, 256-byte keys |
 | Local process watchdog | Heap 64 MiB, RSS 192 MiB; stop on excess |
 | Transport | Exact HTTPS Sheets API origin/registered IDs, strict TLS, 60 seconds/request, no redirects or retries |
 | Pace | At least 2.1 seconds between starts, about 29 reads/minute |
-| Persisted writes | One private lock, counted ledger entries, two compact progress files and two completed receipts; no raw response exports |
+| Persisted writes | One private lock, counted ledger entries, one compact probe receipt, two progress files and two completed receipts; no raw response exports |
 
 Actual production response sizes are unknown. The failed native receipt proves
 only that its serialized body exceeded 8 MiB. The measured fixtures below are
@@ -96,7 +100,24 @@ token-exchange POSTs, separate from the 56 Sheets GETs; ordinary owner sign-in
 browser traffic is not a spreadsheet integrity request. This grant reads Sheets
 on the owner's account; the runner additionally restricts access to the three
 registry IDs. OAuth provisioning is a remaining gate, not completed validation.
-No project/client creation, token exchange or grant has occurred.
+The owner authorized a dedicated Google project, which was created with the
+Sheets API enabled. The actual project quotas are 300 reads/minute/project and
+60 reads/minute/user; project usage was zero. The owner confirmed no billing
+account is linked and the normal Chrome console survives a reload. Codex's
+billing/OAuth route stalled and a fresh tab could not load the project list.
+A separately authorized Chrome connector reached sign-in, where Google rejected
+the automation-controlled browser as potentially insecure. The owner supplied
+the rejection screenshot. Stop without another login attempt, browser-security
+changes, cookie extraction or a credential workaround. Client setup and grant
+verification remain gated. No OAuth client, token exchange or grant occurred.
+
+The Sheets read-only scope applies to spreadsheets accessible to the account;
+Google does not offer a read-only OAuth scope restricted to three file IDs. The
+runner pins the exact three workbook IDs independently and cannot call a write
+endpoint. Do not add Drive, Gmail or identity scopes or share any source sheet.
+Store credentials using an owner-only ACL or Windows user-bound encryption;
+the existing private directory's inherited broad local ACL is not sufficient
+for plaintext tokens. Raw workbook bodies still must never be stored.
 
 Google documents standard Sheets API use at no additional charge, with 60 reads
 per user/project/minute and 300 per project/minute; it also announces possible
@@ -110,7 +131,7 @@ part of this plan. Local connectivity/TLS and the OAuth grant are still unproved
 
 ## Local evidence
 
-Full suite: **438 passed, zero failed/skipped**, including 18 new tests for
+Full suite: **443 passed, zero failed/skipped**, including 23 streaming tests for
 determinism, all 208 headers, full metadata/cell coverage, association changes,
 invalid sparse shapes, incomplete/truncated JSON, duplicate keys, UTF-8, bounds,
 authentication/redirect refusal, wire/memory caps, before/after mismatch,
@@ -134,8 +155,17 @@ validated candidate exactly. No application logic or Cloud graph was changed.
 1. After approval of this method/GET ceiling and establishment of the separate
    read-only grant, verify owner editor authentication, current trial/storage
    headroom and costs. Reconcile the saved production/staging baselines; establish
-   the source editing pause. Run the 28 BEFORE GETs once. Any incomplete coverage
-   or failed receipt stops before synthetic testing.
+   the source editing pause. Run `--run probe` once: the first registered
+   workbook's Arc Research grid, all 208 headers and complete allocated grid,
+   under the existing 64 MiB streaming/60-second/memory bounds. This performs
+   exactly one GET and exits with AWAITING_REVIEW, not a complete baseline.
+   Its receipt includes transport bytes/chunks/time/peak memory, association
+   hashes and coverage. Review material differences before recording its exact
+   receipt hash in the private approval. A failed or altered probe cannot be
+   resumed or retried. If approved, BEFORE reuses this grid receipt, validates
+   its property hashes against fresh metadata and makes the other 27 GETs.
+   AFTER makes 28 GETs, preserving exactly 56 new GETs. Any incomplete coverage
+   or failed receipt stops before synthetic testing. No native 8 MiB cap changes.
 2. Reuse the four existing inactive/unpublished staging workflows, four tables
    and eight identities. Preserve all already passing manual research, saved
    copy, blocker, approval, social and mock-success evidence. Use S8 for remaining
@@ -182,8 +212,12 @@ validated candidate exactly. No application logic or Cloud graph was changed.
    Provider ambiguity remains locked. Stage 2 and production publication still
    require separate owner approval.
 
-**New authorization needed:** ceiling 62 for the 56 new read-only Sheets GETs;
-the external streaming/data/credential boundary above; and an owner-approved
-read-only OAuth provisioning path, including at most two token exchanges.
-The current live ledger still records 6/14 GETs, 43/84 executions and 134/500
-mutations, with no reservations. No approval file or cap update has been made.
+**Current gates:** the owner conditionally approved ceiling 62, read-only OAuth
+setup and a single reviewed live request before continuation. The live ledger
+still records 6/14 GETs, 43/84 executions and 134/500 mutations, with no
+reservations. Activate the higher cap only after the pre-execution gates are
+verified. No runnable approval file, credential or cap update has been made.
+The local gate revision passes five additional regressions: single-counted
+probe/reuse/exact budget, missing/stale/scope/quota/cost/storage/pause refusal,
+failed/tampered probe rejection, fresh metadata drift and actual transport
+timeout/no retry. Existing passing Cloud scenarios are preserved.

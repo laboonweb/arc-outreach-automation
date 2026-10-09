@@ -11,13 +11,18 @@ approved 8 MiB body limit. It returned the redacted failure
 testing stopped without retry. The isolated control was restored exactly, and
 fresh production and synthetic preservation checks passed. The unchanged local
 candidate has been rebuilt with all six hashes unchanged. Latest full local suite:
-438 passed, zero failed/skipped, including 18 external streaming integrity tests.
+443 passed, zero failed/skipped, including 23 external streaming integrity tests.
 Totals are 43/84 Cloud executions, 134/500 synthetic mutations and 6/14 integrity
 GETs. Complete paired source integrity remains blocked. The external, read-only
 streaming verifier has been demonstrated locally on the 208-column schema and
 32-66 MB synthetic responses, with less than 23 MB peak heap. Its 56 new GETs and
-separate read-only OAuth grant require approval; no Cloud or Google data request
-was made during this correction.
+separate read-only OAuth connection are conditionally approved subject to verified
+client, scope, storage, quota, costs and a single live probe. The dedicated Google
+project and Sheets API are prepared; actual quotas are verified and the owner
+confirmed no linked billing account. Google rejected sign-in from the automated
+Chrome browser; the live path stopped before a client or grant. No Cloud execution or Google data
+request was made during this correction. The probe now pauses for review and is
+reused in BEFORE, preserving exactly 56 new GETs and the cumulative ceiling of 62.
 Stage 2 and production publication remain on hold.
 
 See the [compact remaining execution plan](docs/integrity-streaming-stage1-plan.md)
