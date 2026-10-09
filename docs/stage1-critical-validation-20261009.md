@@ -1,5 +1,9 @@
 # Stage 1 critical validation, 9 October 2026
 
+Historical checkpoint retained. The final AFTER and preservation subsequently
+passed on 10 October; see the [final report](stage1-final-report-20261010.md).
+The pending disposition and resource use below describe this earlier checkpoint.
+
 **Cloud critical tests passed after two narrow corrections. Stage 1 is pending
 the final complete AFTER source-integrity comparison. Production release remains
 blocked. No Stage 2, publication, deployment or real provider call has occurred.**

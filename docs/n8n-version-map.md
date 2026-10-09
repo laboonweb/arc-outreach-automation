@@ -90,3 +90,20 @@ Batch controls has an explicit runOnceForAllItems Code mode, equal to the omitte
 original default. Temporary native/mocked test graphs are retained privately.
 See the [release manifest](release-candidate-20261009.md) for all six rebuilt
 candidate hashes and exact future diff; this mapping does not imply deployment.
+
+### Stage 1 complete, 10 October 2026
+
+Validated implementation remains Git `91b9539cf5057563839757c91abf76ecac231067`;
+the current documentation checkpoint adds final receipts and Stage 2 scope only.
+All six production versions above and all four restored staging versions were
+freshly verified unchanged before and after the final 28 external integrity reads.
+All four production tables and all 26 synthetic rows match their saved hashes.
+Complete BEFORE/AFTER covers three books/22 tabs and matches every grid/metadata
+hash. No workflow update or Cloud execution ran in this final gate.
+
+Final cumulative use: 71/84 executions, 154/500 row mutations, 67/67 counted
+Google GET slots and five/five OAuth token POSTs. Source/candidate hashes remain
+unchanged; only the existing baseline panel is published. Stage 2 and production
+deployment require separate approval. See the
+[final Stage 1 report](stage1-final-report-20261010.md) and
+[owner-only Stage 2 scope](stage2-owner-zoho-plan-20261010.md).

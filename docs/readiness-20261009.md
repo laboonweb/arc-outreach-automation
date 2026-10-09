@@ -1,8 +1,8 @@
 # Readiness continuation, 9 October 2026
 
-**Current status:** complete compact BEFORE and critical synthetic Cloud tests
-passed after two narrow fixes; final AFTER is pending. The stops below remain
-historical. See the [consolidated report](stage1-critical-validation-20261009.md)
+**Current status:** Stage 1 passed on 10 October, including complete matching
+BEFORE/AFTER and final preservation. The stops below remain historical.
+See the [final report](stage1-final-report-20261010.md)
 and [candidate release manifest](release-candidate-20261009.md).
 
 **Release blocked. No production publication or deployment occurred.**

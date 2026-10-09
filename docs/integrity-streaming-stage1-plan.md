@@ -1,12 +1,11 @@
 # Remaining Stage 1 execution plan, 9 October 2026
 
-**Current status supersedes the historical stop below:** the owner approved
-67 counted Google GETs/five OAuth token POSTs. Complete compact BEFORE passed
-all 28 reads and the critical synthetic Cloud continuation finished. Usage is
-39/67 GET slots, 4/5 token POSTs, 71/84 executions and 154/500 mutations.
-The only remaining Stage 1 execution is 28 AFTER reads after fresh prerequisites
-and separate ordinary-browser consent. No further Cloud run is needed.
-See the [consolidated report](stage1-critical-validation-20261009.md).
+**Current status supersedes the historical stops below: Stage 1 passed.**
+Complete compact BEFORE/AFTER cover all 28 reads per phase and every book/tab
+hash matches. Final preservation passed. Usage is 67/67 GET slots, 5/5 token
+POSTs, 71/84 executions and 154/500 mutations. No further Google request/token
+exchange is permitted. This plan is now historical; see the
+[final report](stage1-final-report-20261010.md).
 The following stopped attempts remain historical evidence, not current authority.
 
 **The corrected live research-grid probe passed; complete BEFORE stopped on the

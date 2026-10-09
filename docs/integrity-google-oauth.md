@@ -1,11 +1,11 @@
 # Owner-operated Google authorization
 
-Current Stage 1 status: the approved compact BEFORE completed all 28 reads
-with exact Sheets read-only authorization. Cumulative use is 39/67 counted GETs
-and four/five token POSTs. Final AFTER requires the existing client, fresh
-prerequisites and one separate ordinary-browser consent for exactly 28 reads.
+Current Stage 1 status: complete BEFORE/AFTER passed and all three book hashes
+match. Final manual consent granted exactly Sheets read-only; cumulative use is
+67/67 counted GETs and five/five token POSTs. No further live authorization or
+integrity request is permitted by these exhausted budgets.
 Earlier single-probe instructions and smaller ceilings below describe prior
-stopped gates. See the [current report](stage1-critical-validation-20261009.md).
+stopped gates. See the [final report](stage1-final-report-20261010.md).
 
 Use the owner's ordinary Chrome, without a browser connector or automated sign-in.
 The existing `arc-integrity-stage-1` project has the Sheets API enabled. Keep

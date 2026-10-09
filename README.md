@@ -1,11 +1,11 @@
 # Arc Outreach Automation
 
-**Development checkpoint, 9 October 2026: all remaining critical synthetic Cloud
-tests passed after two narrow bug fixes. Stage 1 awaits the final complete AFTER
-integrity comparison; this revision is not production validated.**
+**Stage 1 passed, 10 October 2026.** Complete BEFORE/AFTER integrity and all
+critical isolated synthetic Cloud gates passed. This candidate is not deployed
+or production validated; real owner-only Zoho verification remains separately gated.
 
-The complete BEFORE check passed: three workbooks, 22 tabs, complete physical
-grids and all 208 research fields. Native five-engine integration, duplicate
+The complete BEFORE/AFTER hashes match: three workbooks, 22 tabs, complete
+physical grids and all 208 research fields. Native five-engine integration, duplicate
 decisions, actual Data Table payload persistence, CAS failure recovery and
 ambiguous mocked provider results passed. Earlier successful panel scenarios
 were retained. The full local suite passed **472 tests, zero failures/skips**.
@@ -13,14 +13,16 @@ All six production workflow graphs/settings/versions and all 81 production table
 rows remain unchanged. The four existing staging graphs are restored, inactive
 and unpublished; protected synthetic history remains intact.
 
-Consumption: **71/84 Cloud executions, 154/500 synthetic mutations, 39/67 counted
-Google GET slots and 4/5 OAuth token POSTs**. Exactly 28 AFTER reads and one manual
-owner consent remain. Credentials are restricted to the owner; tokens stay in
+Consumption: **71/84 Cloud executions, 154/500 synthetic mutations, 67/67 counted
+Google GET slots and 5/5 OAuth token POSTs**. All 28 AFTER reads passed; no Google
+request/token budget remains. Credentials are restricted to the owner; tokens stay in
 memory. No production/source/provider writes, sends, paid calls or deployment
 occurred. Stage 2's real unsent owner-mailbox Zoho proof and production publication
 still require separate approval.
 
-See the [consolidated critical validation report](docs/stage1-critical-validation-20261009.md),
+See the [final Stage 1 report](docs/stage1-final-report-20261010.md),
+[Stage 2 scope for approval](docs/stage2-owner-zoho-plan-20261010.md),
+[critical validation history](docs/stage1-critical-validation-20261009.md),
 [candidate release manifest](docs/release-candidate-20261009.md) and
 [integrity execution plan](docs/integrity-streaming-stage1-plan.md).
 

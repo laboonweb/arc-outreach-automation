@@ -1,8 +1,9 @@
 # Production release candidate, 9 October 2026
 
-**Prepared for review only. Not authorized for deployment.** Source checkpoint:
-the develop commit containing this manifest, resolvable with
-`git log -1 --format=%H -- docs/release-candidate-20261009.md`. Exact commit and
+**Prepared for review only. Not authorized for deployment.** Stage 1 passed on
+10 October; Stage 2 and final production approval remain pending. Validated
+implementation source: `91b9539cf5057563839757c91abf76ecac231067`. Documentation
+checkpoint is resolvable with `git log -1 --format=%H -- docs/release-candidate-20261009.md`. Exact commit and
 source/export digests are recorded in the private checkpoint receipt. Main stays
 at `b187df8d9ad5a7b88aaff2f8e575e84ffdb5cc84`; Git never deploys n8n.
 
@@ -50,8 +51,9 @@ bulk lead correction, research rerun or existing protection reset is included.
 ## Gates and release sequence
 
 1. Complete matching BEFORE/AFTER integrity receipts for all three books and
-   22 tabs; retain every stopped receipt. Stage 1 currently awaits AFTER.
-2. Separate Stage 2 approval: one real unsent draft to the verified owner's own
+   22 tabs; retain every stopped receipt. PASS: see the
+   [final Stage 1 report](stage1-final-report-20261010.md).
+2. [Separate Stage 2 approval](stage2-owner-zoho-plan-20261010.md): one real unsent draft to the verified owner's own
    mailbox, exact approved neutral copy, provider account/sender/recipient
    isolation, cost/capacity verification, durable claim, confirmed provider
    readback and duplicate refusal. No send and no existing provider-record edit.
