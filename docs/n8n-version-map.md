@@ -179,3 +179,13 @@ tests passed; corrected readback SDK passed full 18-node native validation and
 exact runtime reconstruction, remains uninstalled/unauthorized. Resolve the
 development commit via `git log -1 --format=%H -- docs/stage2-schema-diagnostic-report-20261010.md`.
 See the [result and exact remaining scope](stage2-schema-diagnostic-report-20261010.md).
+
+### Approved final readback stopped before dispatch, 10 October 2026
+
+The staging update and read-only MCP reconciliation returned transport errors;
+no execution was dispatched. Editor export retains original control version
+`18c3a6f5-6ec0-40b8-9ffd-5e14f4e06db3`, nine nodes, inactive; no confirmed new
+workflow version. No application source/candidate artifact changed. Consumption
+remains 80/84 executions, 159/500 mutations, 10/13 provider reads and one/one
+CREATE. Full post-stop API preservation proof remains open. See the
+[exact STOP and approved remaining scope](stage2-final-readback-stop-20261010.md).

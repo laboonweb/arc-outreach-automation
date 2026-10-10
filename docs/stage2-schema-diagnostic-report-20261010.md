@@ -1,5 +1,9 @@
 # Stage 2 schema diagnostic result, 10 October 2026
 
+Current continuation: the final readback was approved, but its staging update
+hit a transport stop before execution. Zero new provider reads or mutations;
+see the [pre-dispatch stop and remaining gate](stage2-final-readback-stop-20261010.md).
+
 **Diagnostic PASS; Stage 2 remains incomplete.** Owner-approved execution **1174**
 made exactly one folder read and one owner-row audit update, then stopped as
 agreed. No subsequent provider operation or Cloud execution occurred. The draft
