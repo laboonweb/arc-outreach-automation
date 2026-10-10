@@ -7,12 +7,12 @@ checkpoint is resolvable with `git log -1 --format=%H -- docs/release-candidate-
 source/export digests are recorded in the private checkpoint receipt. Main stays
 at `b187df8d9ad5a7b88aaff2f8e575e84ffdb5cc84`; Git never deploys n8n.
 
-The [latest Stage 2 result](stage2-schema-diagnostic-report-20261010.md) confirms one owner
-draft and durable receipt in 1171; strict independent readback stopped in 1172
-and the first recovery read stopped in 1173. Single diagnostic 1174 identified the
-folder payload mapping; its correction is local. Production preservation passed.
-No CREATE retry or deployment is authorized. Exact independent unsent/content
-verification and native replay remain the only unfinished Stage 2 tests.
+The [latest Stage 2 result](stage2-final-readback-result-20261010.md) confirms the
+original owner draft and receipt remain preserved. The exact reviewed readback
+ran in 1176 and stopped at its first read on `EXACT_DRAFTS_FOLDER_REQUIRED`;
+one failure audit persisted and staging was restored. Production preservation
+passed. No CREATE retry or deployment is authorized. Exact folder association,
+headers, content/unsent verification and native replay remain unfinished.
 
 ## Exact artifacts and expected production baselines
 
@@ -81,8 +81,11 @@ bulk lead correction, research rerun or existing protection reset is included.
    readback hashes, test evidence and owner approval in the version map/private
    release receipt. Confirm all five engines inactive and zero outgoing messages.
 
-Stage 2's bounded recovery allocation is exhausted; further Cloud execution
-requires a separately reviewed scope. Steps 3-7 remain unauthorized.
+Stage 2 stopped at the strict folder identity gate. Cumulative use is 81/84
+Cloud executions, 11/13 provider reads, 160/500 mutations and 6/8 owner-row
+writes. The one/one CREATE allowance is exhausted. Unused numerical capacity
+does not lift the STOP; further provider work needs a separately reviewed scope.
+Steps 3-7 remain unauthorized.
 
 ## Rollback and recovery
 

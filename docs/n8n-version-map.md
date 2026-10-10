@@ -189,3 +189,26 @@ workflow version. No application source/candidate artifact changed. Consumption
 remains 80/84 executions, 159/500 mutations, 10/13 provider reads and one/one
 CREATE. Full post-stop API preservation proof remains open. See the
 [exact STOP and approved remaining scope](stage2-final-readback-stop-20261010.md).
+
+### Resumed final readback: strict identity stop, 10 October 2026
+
+After the owner restored MCP and expressly authorized resumption, all production
+and staging/table/row baselines were freshly reconciled. The exact reviewed
+18-node candidate was saved in bounded updates as staging control version
+`34b55f4b-5e00-4b1b-a791-474b457eef5d`, inactive/unpublished. Execution `1176`
+made one folder read and one audited owner-row update, then stopped on
+`EXACT_DRAFTS_FOLDER_REQUIRED`. Headers/body and native duplicate refusal did not
+run; no CREATE retry or production change occurred.
+
+Control restoration `1336d6eb-7145-4ee7-b035-db267b3185a3` matches the original
+nine-node graph, credentials, connections, settings and groups; inactive and
+unpublished. All six production full workflow objects/versions, three other
+staging workflows and 108 pre-existing rows match complete hashes. Only the owner
+payload audit and expected row/table update timestamps changed; its original
+claim, provider ID, exact content and previous history remain unchanged.
+
+Cumulative use: 81/84 executions, 160/500 mutations, 11/13 provider reads,
+6/8 owner-row writes and one/one CREATE. Stage 2 remains incomplete. This is a
+sanitized documentation checkpoint; no source/candidate artifact changed.
+Resolve its Git SHA with `git log -1 --format=%H -- docs/stage2-final-readback-result-20261010.md`.
+See the [final readback result and preservation proof](stage2-final-readback-result-20261010.md).
