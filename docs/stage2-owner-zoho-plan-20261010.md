@@ -9,6 +9,11 @@ authorized reads, the approved metadata recovery/diagnostic and the restored gra
 The real-draft allocation below remains a proposal. No additional provider read
 is permitted without approval; the extended four-read ceiling is exhausted.
 
+The owner has since supplied distinct account-primary and Mail outgoing identities.
+The [local identity correction](stage2-identity-correction-20261010.md) validates
+those roles independently and proposes one new read plus owner-dashboard quota
+evidence. It is not installed or executed, and changes no approved draft content.
+
 Purpose: verify the frozen Composio-to-Zoho unsent transport, a durable one-time
 claim, confirmed receipt persistence, actual draft readback and replay refusal.
 Stage 1 already proved the operator lifecycle, qualification, copy/review gates
