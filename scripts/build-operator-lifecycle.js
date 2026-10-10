@@ -21,6 +21,10 @@ function compile(before,stem,{restricted=false}={}){
  for(const n of w.nodes){const prior=(before.workflow||before).nodes.find(x=>x.name===n.name),strip=x=>{const out=structuredClone(x);if(out.parameters?.jsCode)out.parameters.jsCode='CANONICAL_CODE';if(stem==='zoho'&&out.name==='Persist provider result')out.alwaysOutputData=true;return out;};assert.deepEqual(strip(n),strip(prior));}
  const added=stem==='panel'?require('./build-panel-ingress').attach(w):[];
  if(added.length&&!changed.includes('Decision request'))changed.push('Decision request');
+ if(restricted&&stem==='panel'){
+  // The shared response also receives the rejection branch outside this group.
+  const group=w.nodeGroups?.find(g=>g.nodeNames.includes('Show review panel'));assert.ok(group,'PANEL_RESPONSE_GROUP_REQUIRED');group.nodeNames=group.nodeNames.filter(name=>name!=='Show review panel');
+ }
  if(restricted&&stem==='zoho'){
   for(const name of ['Select one explicitly approved email','Verify persisted exact-content claim']){const n=w.nodes.find(n=>n.name===name);assert.ok(n,'PROVIDER_GATE_NODE_REQUIRED');n.parameters.jsCode="throw Error('AUTOMATED_ZOHO_UNAVAILABLE');";if(!changed.includes(name))changed.push(name);}
   const transport=w.nodes.find(n=>n.name==='Composio CREATE_DRAFT only');assert.equal(transport?.type,'n8n-nodes-base.httpRequest','FROZEN_PROVIDER_TRANSPORT_REQUIRED');transport.type='n8n-nodes-base.code';transport.typeVersion=2;transport.parameters={mode:'runOnceForAllItems',jsCode:"throw Error('AUTOMATED_ZOHO_UNAVAILABLE');"};delete transport.credentials;transport.onError='stopWorkflow';transport.retryOnFail=false;changed.push(transport.name);

@@ -1,5 +1,11 @@
 # Restricted operator release, 10 October 2026
 
+Deployment of this original checkpoint stopped before publication and was
+rolled back because native n8n rejected the panel's canvas group topology.
+See the [grouping amendment and current version baselines](restricted-release-grouping-amendment-20261010.md).
+Its corrected panel hash requires owner approval; the other five hashes below
+remain unchanged. The previous published panel is still active.
+
 **RESTRICTED RELEASE READY for final owner approval. Not deployed.**
 The six candidates extend the signed-off Stage 1 implementation. Automated Zoho
 handoff is disabled in the backend and its provider HTTP node is removed from
