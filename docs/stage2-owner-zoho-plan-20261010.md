@@ -1,7 +1,13 @@
 # Stage 2 owner-only Zoho validation for approval, 10 October 2026
 
-**Prepared, not authorized. No provider call, draft or Cloud resource has been
-created. Stage 1 passed; production remains unchanged.**
+**Preflight authorized and attempted; stopped at the owner-account check.
+Real draft creation and receipt-table creation remain unauthorized. Stage 1
+passed; production remains unchanged.**
+
+The dated [preflight report](stage2-preflight-report-20261010.md) records all three
+authorized reads, the approved metadata recovery and the restored staging graph.
+The real-draft allocation below remains a proposal. No additional provider read
+is permitted without approval; the original preflight ceiling is exhausted.
 
 Purpose: verify the frozen Composio-to-Zoho unsent transport, a durable one-time
 claim, confirmed receipt persistence, actual draft readback and replay refusal.

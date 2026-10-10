@@ -107,3 +107,23 @@ unchanged; only the existing baseline panel is published. Stage 2 and production
 deployment require separate approval. See the
 [final Stage 1 report](stage1-final-report-20261010.md) and
 [owner-only Stage 2 scope](stage2-owner-zoho-plan-20261010.md).
+
+### Stage 2 preflight stop, 10 October 2026
+
+The owner authorized three read-only provider operations and the bounded recovery
+after execution 1166. Metadata recovery 1167 passed; account read 1168 stopped on
+the owner identity/state guard. No provider draft, table creation or record write
+occurred. All six production versions above were freshly rechecked unchanged;
+five engines remain inactive/manual. No Stage 1 tests were repeated.
+
+Only staging control `ml9StJJLEqWXjgC5` was temporarily changed. Its restored
+version is `9b735fa5-00dd-4c57-b39f-808f7ba4abe7`, inactive/unpublished, with the
+original nine nodes, connections, settings and groups verified equal to saved
+version `f508e8d2-3c7e-4627-91ab-760a5db97af1`. The staging version change is
+expected recovery history, not a production deployment.
+
+Cumulative use is 74/84 Cloud executions and 154/500 matched mutations.
+Preflight provider reads are exhausted at three/three. An additional diagnostic
+read is proposed, not approved or executed. Resolve this documentation checkpoint
+with `git log -1 --format=%H -- docs/stage2-preflight-report-20261010.md`.
+See the [stopped preflight report](stage2-preflight-report-20261010.md).
