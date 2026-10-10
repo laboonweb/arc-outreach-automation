@@ -10,6 +10,11 @@ function filter(){
  document.getElementById('record-count').textContent=count+(count===1?' record':' records');document.getElementById('empty').hidden=count!==0;
 }
 for(const f of filters)f.addEventListener('input',()=>{filter();rememberView();});filter();
+for(const button of document.querySelectorAll('[data-copy-approved]'))button.addEventListener('click',async()=>{
+ const section=button.closest('.manual-email'),field=section.querySelector('[data-approved-'+button.dataset.copyApproved+']'),feedback=section.querySelector('[data-copy-feedback]');
+ try{await navigator.clipboard.writeText(field.value);feedback.textContent='Copied the saved approved '+(button.dataset.copyApproved==='body'?'complete email':button.dataset.copyApproved)+'.';}
+ catch{field.focus();field.select();feedback.textContent='Clipboard access is unavailable. Copy the selected saved value manually.';}
+});
 for(const lead of leads){
  const heading=lead.querySelector('.lead-heading'),detail=lead.querySelector('.lead-detail');
  if(viewState.open===lead.dataset.id){heading.setAttribute('aria-expanded','true');detail.hidden=false;heading.querySelector('.expand').textContent='−';}

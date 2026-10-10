@@ -31,6 +31,7 @@ function process(input,body,research,queue,locks,rows,links,options,now){
  const link=links.find(l=>l.inbox_id===input.id),row=queue.find(x=>x.queue_key===link.queue_key),before=JSON.parse(row.payload),d=JSON.parse(row.payload),source=research.find(x=>x.lead_id===d.lead_id),reviewer=text(body.reviewer);
  if(!reviewer||reviewer.length>100)throw Error('OPERATOR_REVIEWER_REQUIRED');
  const action=input.action,reason=protectedReason(source,d,queue,locks,now),historyActions=new Set(['REPLIED','RESCHEDULE','DISMISS_FOLLOWUP','MARK_FOLLOWUP_SENT','MARK_SENT','DO_NOT_CONTACT','SAVE_HISTORY_EVIDENCE']);
+ if(action==='REQUEST_ZOHO'&&options.zoho_handoff_disabled===true)throw Error('AUTOMATED_ZOHO_UNAVAILABLE');
  if(reason&&!historyActions.has(action))throw Error(reason);
  if(reason==='PERMANENT_SUPPRESSION'&&action!=='DO_NOT_CONTACT')throw Error(reason);
  if(['CLAIMED','UNKNOWN_PROVIDER_RESULT'].includes(d.provider_status)&&action!=='DO_NOT_CONTACT')throw Error('PROVIDER_RECONCILIATION_REQUIRED');
@@ -70,6 +71,11 @@ function process(input,body,research,queue,locks,rows,links,options,now){
   if(action==='REQUEST_ZOHO')r.gate(row,d,research,q.indexes(queue,locks,research,now),now);
   else {if(!['DRAFT_READY','DRAFT_READY_SEND_BLOCKED','NEEDS_REVIEW'].includes(d.draft_status))throw Error('OPERATOR_REVIEW_STATE_REQUIRED');d.draft_status='NEEDS_REVIEW';}
   d.operator_workspace||={version:1,evidence:[],audit:[],copy_claims:[]};d.operator_workspace.evaluation=result;saved=q.pack(d,{...extra(row),reviewer,review_note:input.notes});
+ }else if(action==='MARK_SENT'&&options.zoho_handoff_disabled===true&&d.channel==='EMAIL'&&d.draft_status==='APPROVED'){
+  if(body.sent_confirmed!=='on'&&body.sent_confirmed!==true)throw Error('MANUAL_SEND_CONFIRMATION_REQUIRED');
+  if(input.subject!==d.subject||input.draft!==d.draft_body)throw Error('EDIT_MUST_BE_REVIEWED_BEFORE_APPROVAL');
+  r.apply(row,d,'MARK_SENT',{...r.reviewFor(row),reviewer,manual_email:true,manual_send_confirmation:true,message:input.draft},research,q.indexes(queue,locks,research,now),now);
+  changes.history={method:'MANUAL_EMAIL',message_hash:d.approved_hash};saved=q.pack(d,{...extra(row),reviewer,review_note:input.notes});
  }else if(['REPLIED','RESCHEDULE','DISMISS_FOLLOWUP','MARK_FOLLOWUP_SENT'].includes(action)){
   const operation=action==='DISMISS_FOLLOWUP'?'PARK':action==='MARK_FOLLOWUP_SENT'?'MARK_SENT':action;
   if(!text(input.notes)&&['REPLIED','DISMISS_FOLLOWUP'].includes(action))throw Error('OPERATOR_HISTORY_NOTE_REQUIRED');

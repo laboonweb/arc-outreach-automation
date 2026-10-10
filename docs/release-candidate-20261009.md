@@ -1,5 +1,10 @@
 # Production release candidate, 9 October 2026
 
+Historical Path A manifest. The current release request prioritizes the
+[restricted operator candidate](restricted-release-20261010.md), which disables
+provider handoff and supplies separate six-workflow hashes and a bounded release
+scope. Do not substitute this full candidate for that restricted release.
+
 **Prepared for review only. Not authorized for deployment.** Stage 1 passed on
 10 October; Stage 2 and final production approval remain pending. Validated
 implementation source: `91b9539cf5057563839757c91abf76ecac231067`. Documentation

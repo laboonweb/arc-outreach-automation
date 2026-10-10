@@ -31,12 +31,13 @@ function adapter(d,idx){
  }}};
 }
 function apply(row,d,action,review,research,idx,now){
- if(action==='MARK_SENT'&&(review.step||'initial')==='initial'&&d.channel!=='EMAIL'){
+ if(action==='MARK_SENT'&&(review.step||'initial')==='initial'&&(d.channel!=='EMAIL'||review.manual_email===true)){
   if((d.cloud_manual_sends||[]).some(s=>s.step==='initial'))return d;
   assertVisible(row,d);
-  if(d.draft_status!=='MANUAL_SOCIAL_READY'||!operationsInitialApproved(d)||!review.manual_send_confirmation||review.message!==d.draft_body||!review.reviewer||d.sent_at||d.reply_status||q.blocked(d,idx)||d.route_invalid||d.initial_locked||['SENT','REPLIED','PARKED','DISQUALIFIED','DO_NOT_CONTACT'].includes(d.source_state))throw new Error('EXACT_MANUAL_SOCIAL_SEND_CONFIRMATION_REQUIRED');
+  const email=d.channel==='EMAIL';if(email){if(!d.operator_workspace||d.provider_status||d.provider_draft_id||row.reviewed_hash!==d.approved_hash||JSON.stringify(reviewFor(row))!==JSON.stringify(d.review)||approvalGate({...d,draft_status:'DRAFT_READY'},d.review||{}))throw Error('EXACT_MANUAL_EMAIL_APPROVAL_REQUIRED');gate(row,d,research,idx,now);}
+  if(d.draft_status!==(email?'APPROVED':'MANUAL_SOCIAL_READY')||!operationsInitialApproved(d)||!review.manual_send_confirmation||review.message!==d.draft_body||!review.reviewer||d.sent_at||d.reply_status||q.blocked(d,idx)||d.route_invalid||d.initial_locked||['SENT','REPLIED','PARKED','DISQUALIFIED','DO_NOT_CONTACT'].includes(d.source_state))throw new Error(email?'EXACT_MANUAL_EMAIL_SEND_CONFIRMATION_REQUIRED':'EXACT_MANUAL_SOCIAL_SEND_CONFIRMATION_REQUIRED');
   d.draft_status='SENT';d.sent_at=now;d.followup_count=0;d.followup_due_at=followupDue(d,now);if(!d.followup_due_at)throw new Error('FOLLOWUP_TIMEZONE_REQUIRED');d.last_contact_at=now;
-  d.cloud_manual_sends=[{draft_id:d.draft_key,step:'initial',sent_at:now,message_hash:hash(d),reviewer:review.reviewer}];return d;
+  d.cloud_manual_sends=[...d.cloud_manual_sends||[],{draft_id:d.draft_key,step:'initial',sent_at:now,message_hash:hash(d),reviewer:review.reviewer,...(email?{method:'MANUAL_EMAIL'}:{})}];return d;
  }
  // Recording a confirmed send reuses the original receipt and approval gates.
  // A later research snapshot cannot erase that approved message or receipt.

@@ -1,8 +1,8 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{once}=require('node:events'),{start}=require('../scripts/phase2-operator-preview');
-test('signed native-form save is durable after restart; stale or cross-origin submissions cannot replace it',async()=>{
+for(const restricted of [false,true])test((restricted?'restricted: ':'')+'signed native-form save is durable after restart; stale or cross-origin submissions cannot replace it',async()=>{
  const root=path.resolve(__dirname,'../private/operator-lifecycle');fs.mkdirSync(root,{recursive:true});const dir=fs.mkdtempSync(path.join(root,'persistence-test-')),file=path.join(dir,'synthetic.json');let server;
- const launch=async()=>{server=start({port:0,file});await once(server,'listening');return 'http://127.0.0.1:'+server.address().port;};
+ const launch=async()=>{server=start({port:0,file,restricted});await once(server,'listening');return 'http://127.0.0.1:'+server.address().port;};
  const close=()=>new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()));
  try{
   let base=await launch(),html=await (await fetch(base)).text(),form=/<form[^>]*data-form-id="1">([\s\S]*?)<\/form>/.exec(html)[1],token=/name="token" value="([^"]+)"/.exec(form)[1],original=JSON.parse(fs.readFileSync(file,'utf8')).research;

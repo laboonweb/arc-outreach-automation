@@ -1,5 +1,10 @@
 # Operator-controlled lifecycle, local implementation
 
+The current proposed release is the [restricted operator candidate](restricted-release-20261010.md).
+Its manual email workflow replaces steps 7-8 below: automated Zoho creation is
+disabled in both the panel and engine. This older full-candidate guide remains
+Stage 1 evidence; do not execute its provider handoff instructions for Path B.
+
 8 October 2026. Implemented and tested locally. Not published or deployed.
 The active panel still runs its previous version. The five Phase 2 engines stay
 inactive/manual. This extension uses Node built-ins and makes no paid research call.

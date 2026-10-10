@@ -77,19 +77,22 @@ function recoveryCheckpoint(row,approved,connection,stage,request,response,execu
   if(stage===1)rec.context.header=headers(decoded,row.provider_draft_id,approved);
   if(stage===2)rec.context.body=content(decoded,row.provider_draft_id,approved);
   entry.outcome='PASS';
- }catch(e){entry.outcome='STOP';entry.check=/^[A-Z_]+$/.test(e.message)?e.message:'PROVIDER_JSON_OR_VERIFIER_ERROR';}
+ }catch(e){entry.outcome='STOP';entry.check=/^[A-Z_]+$/.test(e.message)?e.message:'PROVIDER_JSON_OR_VERIFIER_ERROR';if(e.checks)entry.checks=e.checks;}
  rec.reads.push(entry);d.owner_validation[slot]=rec;d.owner_audit.push({at:now,action:'OWNER_READBACK_'+entry.outcome,execution:String(execution),stage:stage+1,request_hash:entry.request_hash,check:entry.check||'EXACT_CHECKS_PASSED'});
  let out=q.pack(d,{reviewer:row.reviewer,reviewed_hash:row.reviewed_hash,claim_execution:row.claim_execution});
  if(stage===2&&entry.outcome==='PASS')out=verified(out,approved,connection,rec.context.folder,rec.context.header,rec.context.body,execution,now);
  return {...out,id:row.id,cas_payload:row.payload,outcome:entry};
 }
 function id(value){if(typeof value!=='string'||!/^\d+$/.test(value))throw Error('LOSSLESS_PROVIDER_ID_REQUIRED');return value;}
-function folders(response,connection){
+function folderIdentityChecks(response,connection){
  const d=readEnvelope(response);if(Object.hasOwn(d,'folders')&&Object.hasOwn(d,'data'))throw Error('AMBIGUOUS_FOLDER_PAYLOAD_REQUIRED_STOP');
  const key=Object.hasOwn(d,'folders')?'folders':'data';if(!Object.hasOwn(d,key))throw Error('ZOHO_DATA_REQUIRED');const rows=d[key];if(!Array.isArray(rows))throw Error('DRAFTS_FOLDER_REQUIRED');
- const found=rows.filter(x=>x.folderType==='Drafts');
- if(found.length!==1||found[0].folderName!=='Drafts'||found[0].path!=='/Drafts'||found[0].isArchived!==0||found[0].URI!=='https://mail.zoho.'+(connection.region||'com')+'/api/accounts/'+connection.account_id+'/folders/'+id(found[0].folderId))throw Error('EXACT_DRAFTS_FOLDER_REQUIRED');
- return {folder_id:found[0].folderId,folder_type:'Drafts'};
+ const found=rows.filter(x=>x&&typeof x==='object'&&x.folderType==='Drafts'),f=found.length===1?found[0]:{},lossless=typeof f.folderId==='string'&&/^\d+$/.test(f.folderId);
+ return {folder:f,checks:{unique_drafts:found.length===1,folder_name:f.folderName==='Drafts',folder_path:f.path==='/Drafts',unarchived:f.isArchived===0,lossless_folder_id:lossless,account_association:lossless&&f.URI==='https://mail.zoho.'+(connection.region||'com')+'/api/accounts/'+connection.account_id+'/folders/'+f.folderId}};
+}
+function folders(response,connection){
+ const result=folderIdentityChecks(response,connection);if(!Object.values(result.checks).every(Boolean)){const error=Error('EXACT_DRAFTS_FOLDER_REQUIRED');error.checks=result.checks;throw error;}
+ return {folder_id:result.folder.folderId,folder_type:'Drafts'};
 }
 function mailbox(value,expected){
  if(typeof value!=='string'||/[\r\n,;:]/.test(value))return false;
@@ -118,4 +121,4 @@ function replay(row,approved,connection,execution){
  try{claim(row,approved,connection,execution);}catch(e){if(e.message==='OWNER_REPLAY_BLOCKED')return {duplicate_prevention:true,provider_calls:0,row_mutations:0,state:row.state,draft_id:row.provider_draft_id,sent:false};throw e;}
  throw Error('REPLAY_DID_NOT_BLOCK');
 }
-module.exports={PURPOSE,exact,initial,claim,request,receipt,parseRead,data,schemaReceipt,READ_TOOLS,recoveryRequest,recoveryCheckpoint,id,folders,headers,content,verified,replay};
+module.exports={PURPOSE,exact,initial,claim,request,receipt,parseRead,data,schemaReceipt,READ_TOOLS,recoveryRequest,recoveryCheckpoint,id,folderIdentityChecks,folders,headers,content,verified,replay};
