@@ -7,6 +7,11 @@ checkpoint is resolvable with `git log -1 --format=%H -- docs/release-candidate-
 source/export digests are recorded in the private checkpoint receipt. Main stays
 at `b187df8d9ad5a7b88aaff2f8e575e84ffdb5cc84`; Git never deploys n8n.
 
+The [Stage 2 result](stage2-owner-draft-report-20261010.md) confirms one owner
+draft and durable receipt in 1171; strict independent readback stopped in 1172.
+No CREATE retry or deployment is authorized. Exact independent unsent/content
+verification and native replay remain the only unfinished Stage 2 tests.
+
 ## Exact artifacts and expected production baselines
 
 | Component | Workflow ID | Required unchanged old versionId | Candidate JSON SHA-256 |

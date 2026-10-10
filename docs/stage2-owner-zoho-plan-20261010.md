@@ -1,8 +1,13 @@
 # Stage 2 owner-only Zoho validation for approval, 10 October 2026
 
-**Preflight passed in execution 1170 after the separately approved identity
-correction. Real draft and receipt-table creation remain unauthorized. Stage 1
-passed; production remains unchanged.**
+**Preflight passed in execution 1170. The owner subsequently authorized the exact
+bounded test: creation/receipt passed in 1171; independent readback stopped in
+1172. Staging is restored and production unchanged. See the
+[current result and recovery proposal](stage2-owner-draft-report-20261010.md).
+No additional CREATE or provider read is currently permitted after that stop.**
+
+The proposal below preserves the original reviewed scope and history. Its future
+tense describes the pre-approval plan; the current result is the report above.
 
 The dated [preflight report](stage2-preflight-report-20261010.md) records the
 first four reads, the fifth approved correction, and every recovery/restoration.
