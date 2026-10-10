@@ -2,9 +2,10 @@
 
 **Preflight passed in execution 1170. The owner subsequently authorized the exact
 bounded test: creation/receipt passed in 1171; independent readback stopped in
-1172. Staging is restored and production unchanged. See the
-[current result and recovery proposal](stage2-owner-draft-report-20261010.md).
-No additional CREATE or provider read is currently permitted after that stop.**
+1172. The approved one-execution recovery then stopped at its first read in 1173.
+Staging is restored and production unchanged. See the
+[current result and bounded diagnostic proposal](stage2-readonly-recovery-report-20261010.md).
+No additional CREATE or Cloud execution is permitted after that stop.**
 
 The proposal below preserves the original reviewed scope and history. Its future
 tense describes the pre-approval plan; the current result is the report above.

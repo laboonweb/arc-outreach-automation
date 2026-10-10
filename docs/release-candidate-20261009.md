@@ -7,8 +7,9 @@ checkpoint is resolvable with `git log -1 --format=%H -- docs/release-candidate-
 source/export digests are recorded in the private checkpoint receipt. Main stays
 at `b187df8d9ad5a7b88aaff2f8e575e84ffdb5cc84`; Git never deploys n8n.
 
-The [Stage 2 result](stage2-owner-draft-report-20261010.md) confirms one owner
-draft and durable receipt in 1171; strict independent readback stopped in 1172.
+The [latest Stage 2 result](stage2-readonly-recovery-report-20261010.md) confirms one owner
+draft and durable receipt in 1171; strict independent readback stopped in 1172
+and the first recovery read stopped in 1173. Production preservation passed.
 No CREATE retry or deployment is authorized. Exact independent unsent/content
 verification and native replay remain the only unfinished Stage 2 tests.
 
@@ -79,7 +80,8 @@ bulk lead correction, research rerun or existing protection reset is included.
    readback hashes, test evidence and owner approval in the version map/private
    release receipt. Confirm all five engines inactive and zero outgoing messages.
 
-Current approval does not authorize steps 2-7.
+Stage 2's bounded recovery allocation is exhausted; further Cloud execution
+requires a separately reviewed scope. Steps 3-7 remain unauthorized.
 
 ## Rollback and recovery
 

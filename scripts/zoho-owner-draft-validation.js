@@ -34,21 +34,47 @@ function receipt(row,context,response,now=new Date().toISOString()){
  d.owner_audit.push({at:now,action:'PROVIDER_RECEIPT',execution:context.claim_execution,status:out.provider_status,draft_id:out.provider_draft_id,message_hash:context.message_hash});
  return q.pack(d,{reviewer:'Owner',reviewed_hash:d.approved_hash,claim_execution:d.claim_execution});
 }
+function parseRead(text){
+ if(typeof text!=='string'||Buffer.byteLength(text,'utf8')>1048576)throw Error('BOUNDED_RAW_JSON_REQUIRED');
+ // Preserve integer tokens before JSON parsing; strings and HTML are never rewritten.
+ return JSON.parse(text.replace(/"(?:\\.|[^"\\])*"|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/g,t=>/^[1-9]\d{15,}$/.test(t)?JSON.stringify(t):t));
+}
 function data(response){
  if(!response||typeof response!=='object'||Buffer.byteLength(JSON.stringify(response),'utf8')>1048576||response.successful!==true||response.error)throw Error('BOUNDED_PROVIDER_READ_REQUIRED');
- let d=response.data;for(let i=0;i<3&&typeof d==='string';i++){try{d=JSON.parse(d);}catch{throw Error('PROVIDER_JSON_REQUIRED');}}
+ let d=response.data;for(let i=0;i<3&&typeof d==='string';i++){try{d=parseRead(d);}catch{throw Error('PROVIDER_JSON_REQUIRED');}}
  if(!d||typeof d!=='object'||Array.isArray(d))throw Error('ZOHO_ENVELOPE_OBJECT_REQUIRED');
  if(!d.status||typeof d.status!=='object')throw Error('ZOHO_STATUS_OBJECT_REQUIRED');
- if(typeof d.status.code!=='number')throw Error('ZOHO_STATUS_NUMBER_REQUIRED');
- if(d.status.code!==200)throw Error('ZOHO_STATUS_SUCCESS_REQUIRED');
+ if(d.status.code!==200&&d.status.code!=='200')throw Error('ZOHO_STATUS_SUCCESS_REQUIRED');
  if(!Object.hasOwn(d,'data'))throw Error('ZOHO_DATA_REQUIRED');return d.data;
 }
 function schemaReceipt(response){
  const type=x=>x===null?'null':Array.isArray(x)?'array':typeof x;
  if(Buffer.byteLength(JSON.stringify(response)??'','utf8')>1048576)return {top_type:type(response),size_cap_exceeded:true};
  let d=response?.data,layers=0,parse_ok=true;
- for(;layers<3&&typeof d==='string';layers++){try{d=JSON.parse(d);}catch{parse_ok=false;break;}}
- return {top_type:type(response),successful:response?.successful===true,error_present:!!response?.error,data_type:type(response?.data),json_layers:layers,parse_ok,envelope_type:type(d),status_type:type(d?.status),status_code_type:type(d?.status?.code),native_success:d?.status?.code===200,payload_type:type(d?.data)};
+ for(;layers<3&&typeof d==='string';layers++){try{d=parseRead(d);}catch{parse_ok=false;break;}}
+ return {top_type:type(response),successful:response?.successful===true,error_present:!!response?.error,data_type:type(response?.data),json_layers:layers,parse_ok,envelope_type:type(d),status_type:type(d?.status),status_code_type:type(d?.status?.code),native_success:d?.status?.code===200||d?.status?.code==='200',payload_type:type(d?.data),known_field_types:Object.fromEntries(['data','folders','folderList','response','response_data','result','body','headerContent','content','messageId'].map(k=>[k,type(d?.[k])]))};
+}
+const READ_TOOLS=['ZOHO_MAIL_FOLDERS_LIST_FOLDERS','ZOHO_MAIL_MESSAGES_GET_MESSAGE_HEADERS','ZOHO_MAIL_MESSAGES_GET_MESSAGE_CONTENT'];
+function recoveryRequest(row,approved,connection,stage,execution){
+ const d=exact(row,approved,connection),prior=d.owner_validation.recovery;
+ if(row.state!=='ZOHO_DRAFT_CREATED'||!row.provider_draft_id||d.owner_validation.readback||![0,1,2].includes(stage)||stage===0&&prior||stage>0&&(!prior||prior.execution!==String(execution)||prior.reads.length!==stage||prior.reads.some(x=>x.outcome!=='PASS')))throw Error('EXACT_EXISTING_DRAFT_RECOVERY_REQUIRED');
+ id(row.provider_draft_id);const args=stage===0?{account_id:connection.account_id}:{account_id:connection.account_id,folder_id:prior.context.folder.folder_id,message_id:row.provider_draft_id,...(stage===1?{raw:false}:{region:connection.region,include_block_content:false})};
+ return {connected_account_id:connection.connected_account_id,user_id:connection.user_id,version:z.VERSION,arguments:args};
+}
+function recoveryCheckpoint(row,approved,connection,stage,request,response,execution,now=new Date().toISOString()){
+ if(JSON.stringify(request)!==JSON.stringify(recoveryRequest(row,approved,connection,stage,execution)))throw Error('EXACT_RECOVERY_REQUEST_REQUIRED');
+ const d=exact(row,approved,connection),rec=d.owner_validation.recovery||{execution:String(execution),reads:[],context:{},owner_visual_evidence:'SUPPLEMENTARY_ONLY'},entry={stage:stage+1,tool:READ_TOOLS[stage],at:now,request_hash:sha256(JSON.stringify(request)),draft_id_hash:sha256(row.provider_draft_id),dispatch:'COUNTED_ATTEMPT',schema:{raw_type:typeof response?.data,http_error_present:!!response?.error}};
+ try{
+  const raw=response?.data;if(typeof raw!=='string')throw Error('RAW_PROVIDER_JSON_REQUIRED');entry.bytes=Buffer.byteLength(raw,'utf8');const decoded=parseRead(raw);Object.assign(entry.schema,schemaReceipt(decoded));
+  if(stage===0)rec.context.folder=folders(decoded,connection);
+  if(stage===1)rec.context.header=headers(decoded,row.provider_draft_id,approved);
+  if(stage===2)rec.context.body=content(decoded,row.provider_draft_id,approved);
+  entry.outcome='PASS';
+ }catch(e){entry.outcome='STOP';entry.check=/^[A-Z_]+$/.test(e.message)?e.message:'PROVIDER_JSON_OR_VERIFIER_ERROR';}
+ rec.reads.push(entry);d.owner_validation.recovery=rec;d.owner_audit.push({at:now,action:'OWNER_READBACK_'+entry.outcome,execution:String(execution),stage:stage+1,request_hash:entry.request_hash,check:entry.check||'EXACT_CHECKS_PASSED'});
+ let out=q.pack(d,{reviewer:row.reviewer,reviewed_hash:row.reviewed_hash,claim_execution:row.claim_execution});
+ if(stage===2&&entry.outcome==='PASS')out=verified(out,approved,connection,rec.context.folder,rec.context.header,rec.context.body,execution,now);
+ return {...out,id:row.id,cas_payload:row.payload,outcome:entry};
 }
 function id(value){if(typeof value!=='string'||!/^\d+$/.test(value))throw Error('LOSSLESS_PROVIDER_ID_REQUIRED');return value;}
 function folders(response,connection){
@@ -84,4 +110,4 @@ function replay(row,approved,connection,execution){
  try{claim(row,approved,connection,execution);}catch(e){if(e.message==='OWNER_REPLAY_BLOCKED')return {duplicate_prevention:true,provider_calls:0,row_mutations:0,state:row.state,draft_id:row.provider_draft_id,sent:false};throw e;}
  throw Error('REPLAY_DID_NOT_BLOCK');
 }
-module.exports={PURPOSE,exact,initial,claim,request,receipt,data,schemaReceipt,id,folders,headers,content,verified,replay};
+module.exports={PURPOSE,exact,initial,claim,request,receipt,parseRead,data,schemaReceipt,READ_TOOLS,recoveryRequest,recoveryCheckpoint,id,folders,headers,content,verified,replay};

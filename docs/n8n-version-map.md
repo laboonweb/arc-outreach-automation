@@ -136,3 +136,29 @@ equal to its pre-diagnostic checkpoint. Cumulative use is now 75/84 executions,
 154/500 matched mutations and four/four authorized preflight reads. The instruction
 to stop after that diagnostic result is honored; no further provider operation is
 authorized. Production versions were not modified.
+
+### Owner draft and read-only recovery, 10 October 2026
+
+Preflight 1170 passed. The single owner-approved draft and durable claim/receipt
+passed in 1171; independent readback stopped in 1172. Approved recovery 1173
+made one folder read and one durable failure audit, then stopped on the missing
+native payload member. No new CREATE, send or production update occurred.
+
+| Staging control `ml9StJJLEqWXjgC5` | Confirmed versionId | State |
+|---|---|---|
+| Original graph before recovery | `649ae1a3-0461-4bb0-a373-5c9b344cddc2` | Inactive/unpublished |
+| Audited 18-node recovery graph | `0599d0b5-126c-4f5a-a511-d3823c46faba` | Inactive/unpublished |
+| Restored original nine-node graph | `046871f5-1036-4663-a133-d2c38e7634c4` | Inactive/unpublished; exact nodes/connections/settings/groups |
+
+All six production versions in the original table, nine pre-existing tables/108
+rows and other three Stage 1 workflow versions were freshly verified unchanged.
+The one owner record retains its original claim/provider ID and adds a safe STOP
+audit. Cumulative use: 79/84 executions, 158/500 mutations, 9/11 counted provider
+reads, one/one CREATE, 67/67 Google GETs and five/five OAuth token POSTs.
+
+This section's develop commit is a tested diagnostic checkpoint, not production
+validation or deployment. Resolve its exact SHA with
+`git log -1 --format=%H -- docs/stage2-readonly-recovery-report-20261010.md`.
+Local tests: 506 passed. The proposed single-read diagnostic passed eight-node
+native validation and remains local, uninstalled and unauthorized. See the
+[recovery report and remaining gate](stage2-readonly-recovery-report-20261010.md).

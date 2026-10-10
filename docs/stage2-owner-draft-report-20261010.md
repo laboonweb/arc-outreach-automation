@@ -1,5 +1,11 @@
 # Stage 2 owner draft result, 10 October 2026
 
+Current continuation: owner-approved recovery **1173** durably stopped on the
+first read's missing native payload member. Staging and preservation passed.
+See the [latest result, exact totals and unexecuted diagnostic scope](stage2-readonly-recovery-report-20261010.md).
+The sections below preserve the historical 1171/1172 checkpoint and its proposal;
+their budgets/restoration version are superseded by the latest report.
+
 **INCOMPLETE. One approved draft was created and its receipt persisted. Strict
 independent readback stopped; no retry or deployment is authorized.**
 

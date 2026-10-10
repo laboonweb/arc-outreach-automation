@@ -80,10 +80,47 @@ test('generated HTTP nodes retain frozen versions, TLS, no retry and no send/del
  assert.equal(graphs.create.nodes.find(n=>n.name==='Verify durable claim before CREATE').parameters.jsCode.includes('arc.request(rows,expected'),true);
 });
 test('readback schema diagnostics distinguish shape failures without accepting them or retaining values',()=>{
- const cases=[[[], 'ZOHO_ENVELOPE_OBJECT_REQUIRED'],[{},'ZOHO_STATUS_OBJECT_REQUIRED'],[{status:{code:'200'},data:[]},'ZOHO_STATUS_NUMBER_REQUIRED'],[{status:{code:500},data:[]},'ZOHO_STATUS_SUCCESS_REQUIRED'],[{status:{code:200}},'ZOHO_DATA_REQUIRED']];
+ const cases=[[[], 'ZOHO_ENVELOPE_OBJECT_REQUIRED'],[{},'ZOHO_STATUS_OBJECT_REQUIRED'],[{status:{code:' 200'},data:[]},'ZOHO_STATUS_SUCCESS_REQUIRED'],[{status:{code:500},data:[]},'ZOHO_STATUS_SUCCESS_REQUIRED'],[{status:{code:200}},'ZOHO_DATA_REQUIRED']];
  for(const [data,error]of cases)assert.throws(()=>v.data({successful:true,data}),new RegExp(error));
  const response={successful:true,data:JSON.stringify({status:{code:'200'},data:{private_value:'synthetic-private-body'}})},diagnostic=v.schemaReceipt(response);
- assert.equal(diagnostic.status_code_type,'string');assert.equal(diagnostic.native_success,false);assert.equal(JSON.stringify(diagnostic).includes('synthetic-private-body'),false);assert.throws(()=>v.data(response),/ZOHO_STATUS_NUMBER_REQUIRED/);
+ assert.equal(diagnostic.status_code_type,'string');assert.equal(diagnostic.native_success,true);assert.equal(JSON.stringify(diagnostic).includes('synthetic-private-body'),false);assert.deepEqual(v.data(response),{private_value:'synthetic-private-body'});
  assert.equal(v.schemaReceipt(wrap([])).native_success,true);assert.equal(v.schemaReceipt({successful:true,data:'broken'}).parse_ok,false);
  assert.deepEqual(v.schemaReceipt({successful:true,data:'x'.repeat(1048577)}),{top_type:'object',size_cap_exceeded:true});
+});
+
+test('read-only raw JSON preserves long integer ID tokens, strings and exact HTML without Number coercion',()=>{
+ const raw='{"messageId":1700000000000000001,"folderId":900000000000000001,"text":"1700000000000000001 \\"quoted\\"","status":{"code":200}}';
+ const parsed=v.parseRead(raw);assert.equal(parsed.messageId,draftId);assert.equal(parsed.folderId,folderId);assert.equal(parsed.text,'1700000000000000001 "quoted"');assert.equal(parsed.status.code,200);
+ for(const code of [true,null,'200.0','0200',' 200','200 ',201,500])assert.throws(()=>v.data({successful:true,data:{status:{code},data:[]}}),/ZOHO_STATUS_SUCCESS/);
+ for(const raw of ['{"messageId":1700000000000000001','not json','x'.repeat(1048577)])assert.throws(()=>v.parseRead(raw));
+ assert.throws(()=>v.id(v.parseRead('{"messageId":1.7e18}').messageId),/LOSSLESS/);
+});
+test('bounded recovery graph certifies three exact reads with three durable checkpoints and native replay refusal',()=>{
+ const {receipt}=setup(),graph=require('../scripts/build-owner-draft-validation').buildRecovery(approved,connection,'synthetic-table',{id:'synthetic-credential',name:'Synthetic API'},receipt);
+ const raw=x=>({data:JSON.stringify(x)}),native=d=>({successful:true,error:null,data:{status:{code:'200'},data:d}});
+ const f=JSON.parse(folder().data).data,h=head(),b={messageId:draftId,content:z.renderDraftHtml(approved.body)};
+ const result=runGraph(graph,receipt,[raw(native(f)),raw(native(h)),raw(native(b))]);
+ assert.equal(result.calls,3);assert.equal(result.writes,3);assert.equal(result.output.replay.duplicate_prevention,true);assert.equal(result.output.verification.unsent_verified,true);
+ const d=JSON.parse(result.row.payload);assert.equal(d.owner_validation.recovery.reads.length,3);assert.equal(d.owner_validation.recovery.reads.every(x=>x.outcome==='PASS'),true);assert.equal(d.claim_execution,'synthetic-execution');assert.equal(result.row.provider_draft_id,draftId);assert.equal(result.row.sent,false);
+ for(const n of graph.nodes.filter(n=>n.type.endsWith('.httpRequest'))){assert.equal(n.parameters.options.response.response.responseFormat,'text');assert.equal(n.retryOnFail,false);assert.equal(n.parameters.options.redirect.redirect.followRedirects,false);assert.equal(v.READ_TOOLS.some(t=>n.parameters.url.endsWith(t)),true);}
+});
+test('recovery errors persist safe diagnostics and refuse subsequent reads without altering the claim',()=>{
+ const {receipt}=setup(),request=v.recoveryRequest(receipt,approved,connection,0,'recovery'),bad={data:JSON.stringify({successful:true,data:{data:[{private_value:'synthetic-private-value'}]}})},out=v.recoveryCheckpoint(receipt,approved,connection,0,request,bad,'recovery',now);
+ assert.equal(out.outcome.outcome,'STOP');assert.equal(out.outcome.check,'ZOHO_STATUS_OBJECT_REQUIRED');assert.equal(out.outcome.schema.status_type,'undefined');assert.equal(out.claim_execution,receipt.claim_execution);assert.equal(out.provider_draft_id,draftId);
+ assert.equal(JSON.stringify(JSON.parse(out.payload).owner_validation.recovery).includes('synthetic-private-value'),false);assert.throws(()=>v.recoveryRequest(out,approved,connection,1,'recovery'),/EXACT_EXISTING/);
+ assert.throws(()=>v.recoveryCheckpoint(receipt,approved,connection,0,{...request,connected_account_id:'ca_wrong'},bad,'recovery',now),/EXACT_RECOVERY_REQUEST/);
+ const oversized=v.recoveryCheckpoint(receipt,approved,connection,0,request,{data:'x'.repeat(1048577)},'recovery',now);assert.equal(oversized.outcome.check,'BOUNDED_RAW_JSON_REQUIRED');
+ const missing=v.recoveryCheckpoint(receipt,approved,connection,0,request,{data:JSON.stringify({successful:true,data:{status:{code:200}}})},'recovery',now);assert.equal(missing.outcome.check,'ZOHO_DATA_REQUIRED');assert.equal(missing.outcome.schema.native_success,true);assert.equal(missing.outcome.schema.payload_type,'undefined');assert.equal(missing.claim_execution,receipt.claim_execution);
+ const shape=v.schemaReceipt({successful:true,data:{status:{code:200},folders:[{private_value:'synthetic-private-value'}]}});assert.equal(shape.known_field_types.folders,'array');assert.equal(JSON.stringify(shape).includes('synthetic-private-value'),false);assert.throws(()=>v.data({successful:true,data:{status:{code:200},folders:[]}}),/ZOHO_DATA_REQUIRED/);
+ assert.throws(()=>v.recoveryRequest({...receipt,provider_draft_id:'wrong'},approved,connection,0,'recovery'));
+});
+test('one-read schema diagnostic preserves stopped recovery and cannot certify or repeat a draft',()=>{
+ const {receipt}=setup(),request=v.recoveryRequest(receipt,approved,connection,0,'recovery'),stopped=v.recoveryCheckpoint(receipt,approved,connection,0,request,{data:JSON.stringify({successful:true,data:{status:{code:200}}})},'recovery',now);
+ const builder=require('../scripts/build-owner-draft-validation'),graph=builder.buildSchemaDiagnostic(approved,connection,'synthetic-table',{id:'synthetic-credential',name:'Synthetic API'},stopped),raw={data:JSON.stringify({successful:true,data:{status:{code:200},folders:[{private_value:'synthetic-private-value'}]}})};
+ const result=runGraph(graph,stopped,[raw]),before=JSON.parse(stopped.payload),after=JSON.parse(result.row.payload);
+ assert.equal(result.calls,1);assert.equal(result.writes,1);assert.equal(result.output.verification_complete,false);assert.equal(result.output.diagnostic.schema.known_field_types.folders,'array');assert.equal(result.output.diagnostic.outcome,'SCHEMA_OBSERVED');assert.equal(JSON.stringify(result.output).includes('synthetic-private-value'),false);
+ assert.deepEqual(after.owner_validation.recovery,before.owner_validation.recovery);assert.equal(after.owner_validation.readback,undefined);assert.deepEqual(after.owner_audit.slice(0,-1),before.owner_audit);assert.equal(result.row.claim_execution,receipt.claim_execution);assert.equal(result.row.provider_draft_id,draftId);assert.equal(result.row.sent,false);assert.equal(v.replay(result.row,approved,connection,'replay').provider_calls,0);
+ assert.throws(()=>runGraph(graph,result.row,[]),/EXACT_RECOVERY_BASELINE/);assert.throws(()=>runGraph(graph,receipt,[]),/EXACT_RECOVERY_BASELINE/);assert.throws(()=>runGraph(graph,{...stopped,provider_draft_id:'wrong'},[]),/EXACT_RECOVERY_BASELINE/);
+ for(const response of [{data:'invalid'},{data:'x'.repeat(1048577)},{error:'timeout'},{data:JSON.stringify({successful:false,data:{status:{code:200}}})}])assert.throws(()=>runGraph(graph,stopped,[response]),/OWNER_SCHEMA_DIAGNOSTIC_STOP/);
+ assert.equal(graph.nodes.filter(n=>n.type.endsWith('.httpRequest')).length,1);assert.equal(graph.nodes.filter(n=>n.type.endsWith('.dataTable')&&n.parameters.operation==='update').length,1);assert.equal(graph.active,false);assert.equal(graph.nodes.find(n=>n.type.endsWith('.httpRequest')).parameters.options.response.response.responseFormat,'text');
 });
