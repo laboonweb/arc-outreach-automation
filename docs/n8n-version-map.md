@@ -162,3 +162,20 @@ validation or deployment. Resolve its exact SHA with
 Local tests: 506 passed. The proposed single-read diagnostic passed eight-node
 native validation and remains local, uninstalled and unauthorized. See the
 [recovery report and remaining gate](stage2-readonly-recovery-report-20261010.md).
+
+### Single schema diagnostic, 10 October 2026
+
+Owner-approved execution 1174 made one folder read and one safe owner audit update;
+identified the `folders` array; did not certify the draft or continue. Control
+`ml9StJJLEqWXjgC5` temporarily used version
+`4fed4785-d122-4fe5-8e16-5178227216b4`, then restored to
+`18c3a6f5-6ec0-40b8-9ffd-5e14f4e06db3` (original nine-node graph, settings and
+groups exact; inactive/unpublished). All six production versions, nine previous
+tables/108 rows and other three staging versions match their complete baselines.
+
+Cumulative: 80/84 executions, 159/500 mutations, 10/11 provider reads, one/one
+CREATE; Google/OAuth limits unchanged. Local folder adapter correction: 508 full
+tests passed; corrected readback SDK passed full 18-node native validation and
+exact runtime reconstruction, remains uninstalled/unauthorized. Resolve the
+development commit via `git log -1 --format=%H -- docs/stage2-schema-diagnostic-report-20261010.md`.
+See the [result and exact remaining scope](stage2-schema-diagnostic-report-20261010.md).

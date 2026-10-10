@@ -7,9 +7,10 @@ checkpoint is resolvable with `git log -1 --format=%H -- docs/release-candidate-
 source/export digests are recorded in the private checkpoint receipt. Main stays
 at `b187df8d9ad5a7b88aaff2f8e575e84ffdb5cc84`; Git never deploys n8n.
 
-The [latest Stage 2 result](stage2-readonly-recovery-report-20261010.md) confirms one owner
+The [latest Stage 2 result](stage2-schema-diagnostic-report-20261010.md) confirms one owner
 draft and durable receipt in 1171; strict independent readback stopped in 1172
-and the first recovery read stopped in 1173. Production preservation passed.
+and the first recovery read stopped in 1173. Single diagnostic 1174 identified the
+folder payload mapping; its correction is local. Production preservation passed.
 No CREATE retry or deployment is authorized. Exact independent unsent/content
 verification and native replay remain the only unfinished Stage 2 tests.
 

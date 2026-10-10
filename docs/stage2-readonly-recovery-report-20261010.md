@@ -1,5 +1,11 @@
 # Stage 2 read-only recovery, 10 October 2026
 
+Current continuation: the owner-approved single diagnostic **1174** passed and
+identified the `folders` payload mapping. Staging/preservation passed; the local
+correction and remaining readback scope are in the
+[latest diagnostic report](stage2-schema-diagnostic-report-20261010.md).
+The sections below preserve the earlier 1173 stop and then-proposed diagnostic.
+
 **INCOMPLETE. Recovery execution 1173 stopped at its first provider read. The
 existing draft, original claim and receipt are preserved. Staging is restored;
 production release remains blocked.** Stage 1 was not repeated.

@@ -3,8 +3,9 @@
 **Preflight passed in execution 1170. The owner subsequently authorized the exact
 bounded test: creation/receipt passed in 1171; independent readback stopped in
 1172. The approved one-execution recovery then stopped at its first read in 1173.
+The separately approved diagnostic 1174 then identified the folder payload.
 Staging is restored and production unchanged. See the
-[current result and bounded diagnostic proposal](stage2-readonly-recovery-report-20261010.md).
+[current result and corrected readback proposal](stage2-schema-diagnostic-report-20261010.md).
 No additional CREATE or Cloud execution is permitted after that stop.**
 
 The proposal below preserves the original reviewed scope and history. Its future
