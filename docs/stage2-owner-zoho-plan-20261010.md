@@ -4,10 +4,10 @@
 Real draft creation and receipt-table creation remain unauthorized. Stage 1
 passed; production remains unchanged.**
 
-The dated [preflight report](stage2-preflight-report-20261010.md) records all three
-authorized reads, the approved metadata recovery and the restored staging graph.
+The dated [preflight report](stage2-preflight-report-20261010.md) records all four
+authorized reads, the approved metadata recovery/diagnostic and the restored graph.
 The real-draft allocation below remains a proposal. No additional provider read
-is permitted without approval; the original preflight ceiling is exhausted.
+is permitted without approval; the extended four-read ceiling is exhausted.
 
 Purpose: verify the frozen Composio-to-Zoho unsent transport, a durable one-time
 claim, confirmed receipt persistence, actual draft readback and replay refusal.
@@ -42,7 +42,8 @@ no extraction, new OAuth scope or secret in Git/chat.
 ## Proposed bounded scope
 
 Approval must explicitly cover the following separate Stage 2 allocation.
-These are ceilings, not operations already dispatched:
+Four preflight reads have now been dispatched under separate approval. All other
+items are proposed future ceilings, not authorized or executed operations:
 
 | Item | Maximum / required behavior |
 |---|---|
@@ -51,7 +52,7 @@ These are ceilings, not operations already dispatched:
 | Owner-test record | 1 in that new table; no changes to the four Stage 1 tables/eight identities |
 | Manual Cloud executions | 8, separately granted; would keep cumulative executions at most 79/84 |
 | Matched row mutations | 6 in the new table; would keep cumulative mutations at most 160/500 |
-| Provider read-only operations | 4 total: at most three preflight identity/allowance/ownership operations and one exact draft readback |
+| Provider read-only operations | Four preflight operations completed under separate approval; future exact-draft readback needs an explicitly reviewed allocation before real-draft approval |
 | Real CREATE_DRAFT | 1 at most, only after preflight passes and exact owner approval is recorded |
 | Sends, deletes, retries | 0 |
 | Sheets/research calls | 0; Stage 1 GET/token limits are exhausted |
@@ -67,7 +68,8 @@ unavailable schemas or unaccounted costs stop the plan.
 
 1. Under separate Stage 2 authorization, establish current provider allowance,
    cost and n8n capacity/storage. Read only the selected connected-account status,
-   sender/account and owner mailbox proof; bound the preflight to three operations.
+   sender/account and owner mailbox proof. Four preflight reads have been consumed;
+   any further proof requires a new, specifically reviewed read allocation.
    Stop if identity, region, schema, allowance or costs cannot be established.
 2. Review the exact private message/recipient and current account proof. A real
    draft call remains disarmed until that explicit owner approval is present.

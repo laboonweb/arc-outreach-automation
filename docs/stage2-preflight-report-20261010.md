@@ -12,13 +12,17 @@ this checkpoint changes documentation only.
 | Frozen CREATE_DRAFT tool metadata GET | 1166 | Stopped at a combined body-format/size guard; original raw response unavailable |
 | Owner-approved metadata recovery, native JSON | 1167 | PASS: pinned slug/version, required draft parameters and supported enum values passed the strict validator |
 | Connected Zoho account read | 1168 | STOP: `OWNER_MAILBOX_IDENTITY_OR_STATE_STOP` |
+| Separately approved account diagnostic | 1169 | STOP: `OWNER_ACCOUNT_CHECKS_FAILED:PRIMARY_ADDRESS`; all other initial identity/state checks passed |
 
 The account read passed Composio success, Zoho status 200, bounded JSON schema
 and exactly one configured account ID. At least one of the exact primary address,
 mailbox address, Zoho account type, enabled flag, status flag or mailbox state
-did not meet the reviewed expectation. The error does not identify which field;
-it does not prove that the mailbox is wrong or disabled. Sender and recipient
-verification are therefore not claimed. Raw profile/account data was deliberately
+did not meet the reviewed expectation. The original error did not identify the
+field. The approved diagnostic isolated only the exact primary-address mismatch;
+mailbox address, account type, enabled/status and mailbox state passed. This does
+not establish whether the discrepancy is an alias, capitalization or another
+address, and does not prove that the owner mailbox is wrong or disabled.
+Downstream confirmed-address and sender checks remain unverified. Raw account data was deliberately
 not retained. Successful metadata proof comes from the pinned validator plus
 execution success, rather than an archived raw provider response.
 
@@ -55,7 +59,7 @@ pass before the owner can approve that exact provider envelope.
 
 ## Preservation and accounting
 
-All six production workflow versions were rechecked unchanged after the stop;
+All six production workflow versions were rechecked unchanged after execution 1168;
 the five engines remain inactive/manual. No production or Stage 1 table-writing
 node ran. Full table contents were not rehashed during this preflight; the signed-off
 Stage 1 table/source proofs remain preserved. All production/provider/synthetic
@@ -63,12 +67,13 @@ records and private recovery snapshots were left untouched by these operations.
 
 Staging control `ml9StJJLEqWXjgC5` was restored to nine nodes. Nodes, connections,
 settings and groups match the saved original; inactive/unpublished restoration
-version is `9b735fa5-00dd-4c57-b39f-808f7ba4abe7`. Other staging graphs were not changed.
+version after the diagnostic is `7b529805-ecfb-4be6-985d-6f905bba599a`.
+Other staging graphs were not changed.
 
 | Resource | This preflight | Cumulative use / ceiling |
 |---|---:|---:|
-| Read-only provider operations | 3 | 3/3 preflight; exhausted |
-| Manual Cloud executions | 3 | 74/84 |
+| Read-only provider operations | 4 | 4/4 owner-extended preflight; exhausted |
+| Manual Cloud executions | 4 | 75/84 |
 | Matched row mutations | 0 | 154/500 |
 | Google GET slots / token POSTs | 0 / 0 | 67/67 and 5/5 |
 | Receipt tables / real drafts / sends | 0 / 0 / 0 | Not authorized |
@@ -83,18 +88,19 @@ reviewed graphs, local envelope proof, control baseline/restoration proof and
 six production version receipts. No raw account response or execution export
 was saved. Safe documentation only is selected for Git.
 
-## Smallest proposed next gate
+## Approved diagnostic and remaining gate
 
-One additional read of the same configured account would expose only static
-failed-check names, replacing the combined identity/state error without changing
-any acceptance criterion. It adds one preflight read (3 to 4) and one manual
-Cloud execution (74 to 75 of 84), with zero mutations or provider writes.
-The diagnostic passed fifteen local checks and native Code-node validation.
-It is saved privately but is not installed or executed. It remains a diagnostic
-stop if any ownership/state check fails; no automatic retry or credential change.
+The owner separately approved one additional read exposing only static failed-check
+names, preserving every acceptance criterion. Execution 1169 consumed that one
+read and Cloud execution, with zero mutations or provider writes. It identified
+only PRIMARY_ADDRESS. Fifteen local checks and native Code-node validation passed
+before dispatch. The original staging graph/settings/groups were then restored;
+the owner-required stop after the result is in effect. No retry or credential change.
 
-Explicit approval is required because the three-read preflight ceiling is
-exhausted and the plan requires stopping on unexpected responses. Only after
+The next step is owner reconciliation of the reviewed mailbox with Zoho's primary
+address or verified alias/sender settings. No further provider read is authorized;
+the four-read ceiling is exhausted. Exact remaining Composio allowances also remain
+unverified. Only after
 current ownership, sender, recipient and remaining applicable allowances are
 established should the exact unsent-draft/table/write/readback scope be submitted
 for separate owner approval. Production release remains blocked.

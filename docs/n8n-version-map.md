@@ -127,3 +127,12 @@ Preflight provider reads are exhausted at three/three. An additional diagnostic
 read is proposed, not approved or executed. Resolve this documentation checkpoint
 with `git log -1 --format=%H -- docs/stage2-preflight-report-20261010.md`.
 See the [stopped preflight report](stage2-preflight-report-20261010.md).
+
+The owner then explicitly approved one additional diagnostic read. Execution
+1169 identified only PRIMARY_ADDRESS mismatch; it did not create or send anything.
+The final staging control restoration is `7b529805-ecfb-4be6-985d-6f905bba599a`,
+inactive/unpublished, with the same nine-node graph, settings and groups verified
+equal to its pre-diagnostic checkpoint. Cumulative use is now 75/84 executions,
+154/500 matched mutations and four/four authorized preflight reads. The instruction
+to stop after that diagnostic result is honored; no further provider operation is
+authorized. Production versions were not modified.
