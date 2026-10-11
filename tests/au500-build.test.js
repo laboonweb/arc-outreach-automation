@@ -1,6 +1,6 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const {structureSdk,operations,graphHash}=require('../scripts/build-au500-integration');
+const {structureSdk,operations,graphHash,bootstrapGraph}=require('../scripts/build-au500-integration');
 const {compact}=require('../scripts/workflow-sdk-compact');
 const dir=path.join(__dirname,'../private/au500-implementation-20261011'),available=fs.existsSync(path.join(dir,'manifest.json'));
 const read=f=>JSON.parse(fs.readFileSync(path.join(dir,f+'.json'),'utf8'));
@@ -11,6 +11,15 @@ function capture(sdk){
 test('SDK transport reconstructs byte-identical runtime strings without modifying the workflow',()=>{
  const w={name:'Synthetic SDK preservation',nodes:[{name:'Synthetic',type:'n8n-nodes-base.code',typeVersion:2,parameters:{mode:'runOnceForAllItems',jsCode:'const value="\\n test $x 😀";return [{json:{value}}];'}}],connections:{},nodeGroups:[]};
  assert.equal(capture(compact(w)).nodes[0].config.parameters.jsCode,w.nodes[0].parameters.jsCode);assert.ok(structureSdk(w).length<300000);
+});
+test('bootstrap deployment settings respect the confirmed 180-second instance ceiling without altering recovery settings',()=>{
+ for(const prior of [undefined,60,600]){
+  const control={nodes:[],connections:{},nodeGroups:[],settings:prior===undefined?{}:{executionTimeout:prior}},before=structuredClone(control);
+  const w=bootstrapGraph(control,{spreadsheet_id:'synthetic-book'});
+  assert.equal(w.settings.executionTimeout,180);assert.equal(w.active,false);assert.equal(w.settings.saveDataSuccessExecution,'none');
+  const settings=operations(control,w).operations.find(op=>op.type==='setWorkflowSettings').settings;
+  assert.ok(settings.executionTimeout<=180);assert.deepEqual(control,before);
+ }
 });
 test('six exact candidates preserve signing, credentials, activation, original group members and unaffected workflows',{skip:!available},()=>{
  for(const role of ['parent','worker','draft','review','sync','panel']){const before=read(role+'-before'),w=read(role+'-candidate');assert.equal(w.active,before.active);assert.deepEqual(w.settings,before.settings);for(const old of before.nodes){const next=w.nodes.find(n=>n.name===old.name);assert.deepEqual(next.credentials,old.credentials);assert.deepEqual(next.position,old.position);if(old.type!=='n8n-nodes-base.code')assert.deepEqual(next,old);}
