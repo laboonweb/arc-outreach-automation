@@ -57,7 +57,7 @@ function reason(row,d){
 }
 function market(row){
  const dataset=text(row.dataset_id).trim().toUpperCase();
- return dataset==='AUSTRALIA'?'Australia':/^MANILA(?:_|$)/.test(dataset)?'Manila':'';
+ return ['AUSTRALIA','AUSTRALIA_500_20261011'].includes(dataset)?'Australia':/^MANILA(?:_|$)/.test(dataset)?'Manila':'';
 }
 function project(row,now=new Date().toISOString()){
  const [{d}]=q.unpack([row]);

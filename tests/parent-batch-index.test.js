@@ -7,7 +7,7 @@ const projectedIntake=require('../scripts/parent-dataset-intake');
 const clone=x=>JSON.parse(JSON.stringify(x)),now='2026-10-06T03:00:00Z';
 function sheet(title,sheetId,headerRow,headers,records){return {properties:{title,sheetId,gridProperties:{rowCount:1000,columnCount:300}},data:[{rowData:[...Array.from({length:headerRow-1},()=>({values:[]})),{values:headers.map(formattedValue=>({formattedValue}))},...records.map(r=>({values:headers.map(h=>({formattedValue:String(r[h]??''),userEnteredValue:{stringValue:String(r[h]??'')}}))}))]}]};}
 function fixture(){
-  const config=clone(require('../config/datasets.json'));Object.assign(config,{batch_size:25,expected_lead_count:689,parent_workflow_id:'SYNTHETIC_PARENT',exa_cost_ceiling_usd:3,tavily_credit_ceiling:150});
+  const config=clone(require('../config/datasets.example.json'));Object.assign(config,{batch_size:25,expected_lead_count:689,parent_workflow_id:'SYNTHETIC_PARENT',exa_cost_ceiling_usd:3,tavily_credit_ceiling:150});
   const counts=[250,55,384],snapshots=config.datasets.map((d,i)=>{
     d.spreadsheet_id='synthetic_workbook_'+i;
     const rows=Array.from({length:counts[i]},(_,n)=>({ID:String(n+1),Business:'Business '+i+' '+String(n).padStart(4,'0'),Address:'Test '+i+' '+n,City:i===0?'Sydney NSW':'Manila',Facebook:n===4?'https://facebook.com/shared'+i:'',Notes:'Source text '.repeat(100)}));

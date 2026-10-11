@@ -51,9 +51,11 @@ function parseLocation(value, country) {
   return { city: location || (country === 'Philippines' ? 'Metro Manila' : ''), state: '', location };
 }
 function validateRegistry(config) {
-  if (!Array.isArray(config.datasets) || config.datasets.length !== 3) throw new Error('THREE_DATASETS_REQUIRED');
-  const seen = new Set();
+  if (!Array.isArray(config.datasets) || ![3,4].includes(config.datasets.length)) throw new Error('THREE_OR_FOUR_DATASETS_REQUIRED');
+  const seen = new Set(), datasetIds = new Set();
   return config.datasets.map(d => {
+    if (!text(d.dataset_id).trim() || datasetIds.has(d.dataset_id)) throw new Error('DUPLICATE_OR_EMPTY_DATASET_ID');
+    datasetIds.add(d.dataset_id);
     const fromUrl = text(d.spreadsheet_url).match(/^https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)?.[1];
     const id = fromUrl || d.spreadsheet_id;
     if (!id || /SPREADSHEET_ID|REPLACE/.test(id) || !/^[a-zA-Z0-9_-]{15,}$/.test(id)) throw new Error('CONFIGURE_SPREADSHEET: ' + d.dataset_id);

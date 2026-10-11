@@ -19,7 +19,7 @@ function sheet(title,id,header,records) {
   return {properties:{title,sheetId:id,gridProperties:{rowCount:1000,columnCount:300}},data:[{rowData:rows}]};
 }
 function fixture() {
-  const config=clone(require('../config/datasets.json'));
+  const config=clone(require('../config/datasets.example.json'));
   config.limit_per_dataset=5;
   config.datasets.forEach((d,i)=>{d.spreadsheet_id='synthetic_workbook_'+i;d.all_leads_previously_contacted=false;});
   const snapshots=config.datasets.map((d,i)=>({spreadsheetId:d.spreadsheet_id,sheets:[
