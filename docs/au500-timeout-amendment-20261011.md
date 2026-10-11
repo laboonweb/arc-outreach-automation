@@ -2,6 +2,13 @@
 
 Status: **locally validated; not applied to n8n**.
 
+Subsequent owner approval: the correction was committed as `6b33822`, applied
+and exactly verified on the inactive staging control. Execution 1181 was
+dispatched, but its receipt was unavailable with retention disabled. Staging
+was restored without replaying writes. See the
+[execution receipt stop report](au500-bootstrap-receipt-stop-20261011.md).
+No production candidate was applied or published.
+
 ## Confirmed failure and preservation
 
 The owner authorized one captured atomic retry of the original staging update.

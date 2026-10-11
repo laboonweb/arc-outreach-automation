@@ -7,7 +7,7 @@ const DATASET='AUSTRALIA_500_20261011',HOLD='MANUAL_ONLY_SOURCE_INTAKE';
 const HEADERS=[...ALL_HEADERS,...RUNTIME_FIELDS];
 const MAX_RESPONSE=8*1024*1024,MAX_WRITE=2*1024*1024;
 function response(raw){
- let r=raw.body||raw;
+ let r=raw.body??(raw.statusCode!==undefined?raw.data:undefined)??raw;
  if(typeof r==='string'){if(Buffer.byteLength(r)>MAX_RESPONSE)throw Error('AU500_RESPONSE_TOO_LARGE');r=JSON.parse(r);}
  if(Buffer.byteLength(JSON.stringify(r))>MAX_RESPONSE)throw Error('AU500_RESPONSE_TOO_LARGE');
  if(raw.statusCode&&raw.statusCode!==200)throw Error('AU500_RESPONSE_FAILED');
@@ -47,4 +47,4 @@ function verify(expected,raw){
  if(!Array.isArray(r.values)||r.values.length!==expected.expected.length||r.values.some((v,i)=>JSON.stringify(HEADERS.map((h,j)=>v[j]??''))!==JSON.stringify(expected.expected[i])))throw Error('AU500_PERSISTENCE_MISMATCH');
  return {rows:r.values.length,sha256:sha256(JSON.stringify(expected.expected))};
 }
-module.exports={DATASET,HOLD,HEADERS,MAX_RESPONSE,MAX_WRITE,response,sourceHash,initial,plan,verify};
+module.exports={DATASET,HOLD,HEADERS,MAX_RESPONSE,MAX_WRITE,response,sourceHash,initial,cell,plan,verify};

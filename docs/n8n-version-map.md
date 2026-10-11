@@ -212,3 +212,34 @@ Cumulative use: 81/84 executions, 160/500 mutations, 11/13 provider reads,
 sanitized documentation checkpoint; no source/candidate artifact changed.
 Resolve its Git SHA with `git log -1 --format=%H -- docs/stage2-final-readback-result-20261010.md`.
 See the [final readback result and preservation proof](stage2-final-readback-result-20261010.md).
+
+
+### Australia 500 production integration, 11 October 2026
+
+DEPLOYMENT PASS. Exact approved four-source compatibility graphs deployed;
+500 new Google Sheets research records verified with durable manual holds.
+Five Queue, five Inbox and five Links inserts; original 109 rows unchanged;
+124 total records across the same ten tables. Provider calls and sends: zero.
+
+| Role | Workflow ID | Final version | State |
+|---|---|---|---|
+| parent | RuH5G0KYDeiTxsVP | f650917b-32a2-400d-9eab-43165a681824 | Published |
+| worker | p7OGMUTPCP87lNTp | 8eb8f167-e668-4ad0-b1ab-6a44f681ddac | Published |
+| draft | Hqm5e1qhO9yadbKz | 36988c9a-912e-414f-a17f-53c4be7a3fee | Inactive / manual |
+| review | 8A1NLpsHfLIRVyNB | 1ff71b46-25af-4d57-9516-d5f69333ff6a | Inactive / manual |
+| sync | Z3k7nFGP0uJOXRLO | 0fff69a6-9408-47de-9fef-85764a829c09 | Inactive / manual |
+| panel | Sx3zqQF3egg8OGRZ | 50b58f62-ded2-43ea-8433-a55c1d89b480 | Published |
+| copy | xhfcPgSl1n2eegQH | 5f46e1e8-d69c-478f-858b-5e5a9a6d01fa | Inactive / manual |
+| zoho | 7a5Sp3jrw5ftfEdn | 6a8ef600-0a22-414c-abb9-f88a2da531fe | Inactive / manual |
+| control | ml9StJJLEqWXjgC5 | 518349ea-930b-435f-99f5-2690d398884a | Inactive / manual |
+
+All five Phase 2 engines remain inactive. Zoho retains three backend-disable
+barriers and no provider transport. The panel was verified through active-version
+metadata, without a live webhook GET. Source hashes and independent table readback
+passed. Local tests: 562 passed, zero failures. Cumulative integration accounting:
+6/6 executions, 92/100 counted GETs, 42/42 counted new-output batchUpdates and
+15/15 inserts, including conservative reservations for unretained prior work.
+No automatic deployment is configured. Resolve the released Git checkpoint with
+`git rev-parse arc-au500-integration-2026-10-11^{commit}`.
+See [the deployment receipt](au500-deployment-receipt-20261011.md) for measured
+versus reconstructed/reserved consumption, capacity exceptions and limitations.

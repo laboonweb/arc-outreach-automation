@@ -12,6 +12,12 @@ test('SDK transport reconstructs byte-identical runtime strings without modifyin
  const w={name:'Synthetic SDK preservation',nodes:[{name:'Synthetic',type:'n8n-nodes-base.code',typeVersion:2,parameters:{mode:'runOnceForAllItems',jsCode:'const value="\\n test $x 😀";return [{json:{value}}];'}}],connections:{},nodeGroups:[]};
  assert.equal(capture(compact(w)).nodes[0].config.parameters.jsCode,w.nodes[0].parameters.jsCode);assert.ok(structureSdk(w).length<300000);
 });
+test('temporary retention restores absent inherited settings with native DEFAULT operations',()=>{
+ const before={id:'synthetic-control',nodes:[],connections:{},nodeGroups:[],settings:{executionOrder:'v1',saveManualExecutions:true,saveDataSuccessExecution:'all',saveDataErrorExecution:'all'}},after={...before,settings:{executionOrder:'v1'}};
+ const settings=operations(before,after).operations.find(o=>o.type==='setWorkflowSettings').settings;
+ assert.deepEqual(settings,{saveManualExecutions:'DEFAULT',saveDataSuccessExecution:'DEFAULT',saveDataErrorExecution:'DEFAULT'});
+ const restored={...before.settings};for(const [k,v]of Object.entries(settings)){if(v==='DEFAULT')delete restored[k];else restored[k]=v;}assert.deepEqual(restored,after.settings);
+});
 test('bootstrap deployment settings respect the confirmed 180-second instance ceiling without altering recovery settings',()=>{
  for(const prior of [undefined,60,600]){
   const control={nodes:[],connections:{},nodeGroups:[],settings:prior===undefined?{}:{executionTimeout:prior}},before=structuredClone(control);

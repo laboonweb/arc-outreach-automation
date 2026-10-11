@@ -14,10 +14,10 @@ test('native seed guard rejects every populated table before inserts, including 
  assert.doesNotThrow(()=>run());for(const name of names)assert.throws(()=>run(name),/SMOKE_TABLES_NOT_EMPTY_DO_NOT_RESEED/);assert.throws(()=>run(undefined,'INTEGRITY'),/SMOKE_SEED_INTENT_REQUIRED/);
  const firstInsert=w.nodes.find(n=>n.name==='Emit exactly eight synthetic leads');assert.ok(w.connections[guard.name].main[0].some(e=>e.node===firstInsert.name));assert.ok(!w.connections['Seed synthetic fixtures?'].main[0].some(e=>e.node===firstInsert.name));
 });
-test('fixture reads associate all three books and exact requested rows without the browser URL global',()=>{
+test('fixture reads associate all registered books and exact requested rows without the browser URL global',()=>{
  const base=require('../scripts/build-phase2-cloud'),diagnostics=require('../scripts/phase2-panel-diagnostics'),registry=base.datasets(),input={queue:state.queue};
  const run=(kind,requests)=>vm.runInNewContext('(function(){'+smoke.fixtureRead(state,kind)+'})()',{$input:{all:()=>requests.map(json=>({json}))}}).map(i=>i.json);
- const all=run('all',base.researchRequests());assert.equal(all.length,3);all.forEach((r,i)=>assert.equal(r.spreadsheetId,registry[i].spreadsheet_id));
+ const all=run('all',base.researchRequests());assert.equal(all.length,registry.length);all.forEach((r,i)=>assert.equal(r.spreadsheetId,registry[i].spreadsheet_id));
  const indices=run('index',diagnostics.indexRequests(input,registry)),requests=diagnostics.exactRequests(input,indices,registry),exact=run('exact',requests);
  assert.doesNotThrow(()=>diagnostics.attach(input,exact,indices,registry,'2026-10-08T04:00:00.000Z'));assert.equal(exact.flatMap(r=>r.valueRanges.slice(1)).length,diagnostics.targets(input).length);
  assert.throws(()=>run('all',[{url:'https://example.org/unexpected'}]),/SMOKE_UNEXPECTED_FIXTURE_URL/);
